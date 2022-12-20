@@ -1,0 +1,41 @@
+version: '3.9'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - db
+    environment:
+      RUST_LOG: info
+      RUST_BACKTRACE: 1
+      DATA_DIR: /opt/wego/data
+    volumes:
+      - wego-data-volume:/opt/wego/data
+    networks:
+      - wego
+    ports:
+      - 8080:8080
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: wego
+    volumes:
+      - wego-db-volume:/var/lib/postgresql/data
+    networks:
+      - wego
+    ports:
+      - 5432:5432
+
+volumes:
+  wego-data-volume:
+  wego-db-volume:
+
+networks:
+  wego:
+    name: wego
+    driver: bridge

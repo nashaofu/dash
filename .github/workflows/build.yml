@@ -1,0 +1,139 @@
+name: build
+
+on:
+  workflow_dispatch: # 手动触发
+  push:
+    branches: ['master']
+    # Publish semver tags as releases.
+    tags: ['v*.*.*']
+  pull_request:
+    branches: ['master']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+
+jobs:
+  build-client:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: latest
+          cache: 'yarn'
+          cache-dependency-path: client/yarn.lock
+      - name: Build client
+        run: cd client && yarn && yarn build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: wego-client
+          path: client/dist
+          if-no-files-found: error
+  build-server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build server
+        uses: addnab/docker-run-action@v3
+        with:
+          image: rust:latest
+          options: '--user 0:0 -v ${{ github.workspace }}:/build -w /build'
+          run: cargo install --path . && strip target/release/wego
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: wego-server
+          path: target/release/wego
+          if-no-files-found: error
+  publish:
+    runs-on: ubuntu-latest
+    needs:
+      - build-client
+      - build-server
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download wego-client artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: wego-client
+          path: www
+      - name: Download wego-server artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: wego-server
+          path: .
+      - name: Display structure of downloaded files
+        run: ls -R
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: wego
+          path: |
+            www
+            wego
+          if-no-files-found: error
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs:
+      - build-client
+      - build-server
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v2
+      # Workaround: https://github.com/docker/build-push-action/issues/461
+      - name: Setup docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Login to registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download wego-client artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: wego-client
+          path: client/dist
+      - name: Download wego-server artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: wego-server
+          path: target/release
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: build.Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.REGISTRY }}/nashaofu/wego:latest
