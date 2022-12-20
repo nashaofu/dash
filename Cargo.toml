@@ -1,0 +1,33 @@
+[package]
+name = "dash"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = [".", "entity", "migration", "utils"]
+
+[dependencies]
+actix-web = "4"
+actix-files = "0.6"
+actix-identity = "0.5"
+actix-session = { version = "0.7", features = ["cookie-session"] }
+serde = { version = "1", features = ["derive"] }
+validator = { version = "0.16.0", features = ["derive"] }
+log = "0.4.17"
+env_logger = "0.10.0"
+dotenv = "0.15.0"
+config = "0.13.3"
+anyhow = "1.0.69"
+regex = "1.7.1"
+lazy_static = "1.4.0"
+actix-multipart-extract = "0.1.5"
+chrono = "0.4.23"
+entity = { path = "./entity" }
+migration = { path = "./migration" }
+utils = { path = "./utils" }
+
+[dependencies.sea-orm]
+version = "0.11.0"
+features = ["debug-print", "sqlx-all", "runtime-async-std-native-tls"]

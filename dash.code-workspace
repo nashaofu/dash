@@ -1,0 +1,17 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "client"
+    }
+  ],
+  "settings": {
+    "cSpell.words": [
+      "actix",
+      "antd",
+      "Sqlx"
+    ]
+  }
+}
