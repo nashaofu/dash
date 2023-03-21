@@ -1,27 +1,31 @@
 import { useCallback, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
-import { IApp } from '@/recoil/apps';
+import { IApp } from '@/types/app';
 import ImageUploader from '../ImageUploader';
 import { IUploadFile, uploadFileToUri, uriToUploadFile } from '@/utils/file';
 
-interface IAppModel extends Pick<IApp, 'url' | 'name'> {
-  icon?: IUploadFile[]
+interface IAppModel extends Pick<IApp, 'url' | 'name' | 'description'> {
+  icon?: IUploadFile[];
 }
 
 export interface IAppEditData extends Omit<IAppModel, 'icon'> {
-  icon?: string
+  icon?: string;
 }
 
 export interface IAppEditProps {
-  app?: IApp | null
-  open: boolean
-  loading: boolean
-  onOk: (app: IAppEditData) => unknown
-  onCancel: () => unknown
+  app?: IApp | null;
+  open: boolean;
+  loading: boolean;
+  onOk: (app: IAppEditData) => unknown;
+  onCancel: () => unknown;
 }
 
 export default function AppEdit({
-  app, open, loading, onOk, onCancel,
+  app,
+  open,
+  loading,
+  onOk,
+  onCancel,
 }: IAppEditProps) {
   const [form] = Form.useForm<IAppModel>();
   const onFinish = useCallback(() => {
@@ -29,12 +33,13 @@ export default function AppEdit({
     onOk({
       url: appModel.url,
       name: appModel.name,
+      description: appModel.description,
       icon: uploadFileToUri(appModel.icon?.[0]),
     });
   }, [form, onOk]);
 
   useEffect(() => {
-    if (open) {
+    if (!open) {
       return;
     }
 
@@ -42,6 +47,7 @@ export default function AppEdit({
       form.setFieldsValue({
         name: app.name,
         url: app.url,
+        description: app.description,
         icon: app.icon ? [uriToUploadFile(app.icon)] : [],
       });
     } else {
@@ -66,7 +72,14 @@ export default function AppEdit({
         loading,
       }}
     >
-      <Form form={form} name={app?.id} layout="vertical" autoComplete="off" onFinish={onFinish} scrollToFirstError>
+      <Form
+        form={form}
+        name={app?.id}
+        layout="vertical"
+        autoComplete="off"
+        onFinish={onFinish}
+        scrollToFirstError
+      >
         <Form.Item
           label="应用 URL"
           name="url"
@@ -106,6 +119,24 @@ export default function AppEdit({
           ]}
         >
           <Input showCount maxLength={30} />
+        </Form.Item>
+        <Form.Item
+          label="应用描述"
+          name="description"
+          validateFirst
+          rules={[
+            {
+              type: 'string',
+              max: 255,
+              message: '应用描述长度不得超过 255 个字符',
+            },
+          ]}
+        >
+          <Input.TextArea
+            showCount
+            maxLength={255}
+            autoSize={{ minRows: 3, maxRows: 5 }}
+          />
         </Form.Item>
         <Form.Item
           label="应用图标"

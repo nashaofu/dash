@@ -1,16 +1,14 @@
 FROM debian:stable-slim
 
-WORKDIR /opt/wego
+WORKDIR /opt/dash
 
-COPY target/release/wego .
+COPY target/release/dash .
 COPY client/dist www
-
-RUN chmod +x wego
 
 EXPOSE 8080
 
 ENV RUST_LOG=info \
   RUST_BACKTRACE=1 \
-  DATA_DIR=/opt/wego/data
+  DATA_DIR=/opt/dash/data
 
-CMD ["/opt/wego/wego"]
+CMD ["/opt/dash/dash"]

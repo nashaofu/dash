@@ -1,2 +1,3 @@
 /dist
-vite.config.ts
+.eslintrc.js
+rspack.config.js

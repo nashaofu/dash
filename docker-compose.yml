@@ -10,11 +10,11 @@ services:
     environment:
       RUST_LOG: info
       RUST_BACKTRACE: 1
-      DATA_DIR: /opt/wego/data
+      DATA_DIR: /opt/dash/data
     volumes:
-      - wego-data-volume:/opt/wego/data
+      - dash-data-volume:/opt/dash/data
     networks:
-      - wego
+      - dash
     ports:
       - 8080:8080
   db:
@@ -23,19 +23,19 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: wego
+      POSTGRES_DB: dash
     volumes:
-      - wego-db-volume:/var/lib/postgresql/data
+      - dash-db-volume:/var/lib/postgresql/data
     networks:
-      - wego
+      - dash
     ports:
       - 5432:5432
 
 volumes:
-  wego-data-volume:
-  wego-db-volume:
+  dash-data-volume:
+  dash-db-volume:
 
 networks:
-  wego:
-    name: wego
+  dash:
+    name: dash
     driver: bridge

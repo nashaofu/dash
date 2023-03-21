@@ -1,51 +1,48 @@
-import { useMemo } from 'react';
-import { Dropdown } from 'antd';
-import { IApp } from '@/recoil/apps';
-import { uriToUrl } from '@/utils/file';
-import styles from './index.module.scss';
+import { theme } from 'antd';
+import { IApp } from '@/types/app';
+import AppIcon from '../AppIcon';
+import styles from './index.module.less';
 
 export interface IAppProps {
-  app: IApp
-  onEdit?: (app: IApp) => unknown
-  onDelete?: (app: IApp) => unknown
+  app: IApp;
 }
 
-export default function App({ app, onEdit, onDelete }: IAppProps) {
-  const items = useMemo(
-    () => [
-      {
-        key: 'edit',
-        label: '编辑应用',
-        onClick: () => {
-          onEdit?.(app);
-        },
-      },
-      {
-        key: 'delete',
-        label: '删除应用',
-        onClick: () => {
-          onDelete?.(app);
-        },
-      },
-    ],
-    [app, onEdit, onDelete],
-  );
+export default function App({ app }: IAppProps) {
+  const { token } = theme.useToken();
 
   return (
-    <a className={styles.app} href={app.url} title={app.name} target="_blank" rel="noreferrer">
-      <Dropdown placement="bottomRight" menu={{ items }} trigger={['click']}>
-        <div className={styles.more}>
-          <span className="iconfont icon-more" />
-        </div>
-      </Dropdown>
+    <a
+      href={app.url}
+      title={app.name}
+      className={styles.app}
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        backgroundColor: token.colorBgContainer,
+        border: `1px solid ${token.colorBgBase}`,
+      }}
+    >
       <div className={styles.icon}>
-        {app.icon ? (
-          <img className={styles.iconImage} src={uriToUrl(app.icon)} alt={app.name} />
-        ) : (
-          <div className={styles.iconText}>{app.name.slice(0, 1).toUpperCase()}</div>
-        )}
+        <AppIcon app={app} />
       </div>
-      <div className={styles.name}>{app.name}</div>
+      <div className={styles.body}>
+        <div
+          className={styles.name}
+          style={{
+            color: token.colorText,
+          }}
+        >
+          {app.name}
+        </div>
+        <div
+          className={styles.description}
+          style={{
+            color: token.colorTextDescription,
+          }}
+        >
+          {app.description}
+        </div>
+      </div>
     </a>
   );
 }

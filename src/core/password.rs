@@ -36,13 +36,13 @@ pub async fn update_password(
   let mut user = users::Entity::find_by_id(operator_id)
     .one(db)
     .await?
-    .and_then(|user| {
-      crypto::verify(&user.password, &data.old_password)
-        .ok()
-        .map(|_| user)
-    })
-    .ok_or(AppError::new(StatusCode::FORBIDDEN, 403, "原密码不正确"))?
+    .ok_or(AppError::new(StatusCode::FORBIDDEN, 404, "未找到对应账号"))?
     .into_active_model();
+
+  crypto::verify(&user.password.as_ref(), &data.old_password)
+    .map_err(AppError::from_err)?
+    .then_some(true)
+    .ok_or(AppError::new(StatusCode::FORBIDDEN, 403, "原密码不正确"))?;
 
   let password = crypto::hash(&data.password).map_err(AppError::from_err)?;
 

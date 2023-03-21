@@ -9,6 +9,8 @@ pub struct Model {
   pub name: String,
   pub url: String,
   #[sea_orm(nullable)]
+  pub description: Option<String>,
+  #[sea_orm(nullable)]
   pub icon: Option<String>,
   pub owner_id: i64,
   pub created_at: DateTime,

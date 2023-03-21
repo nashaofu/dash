@@ -83,6 +83,12 @@ impl MigrationTrait for Migration {
               .string_len(255)
               .not_null(),
           )
+          .col(
+            ColumnDef::new(Apps::Description)
+              .string()
+              .string_len(255)
+              .null(),
+          )
           .col(ColumnDef::new(Apps::Icon).string().string_len(255).null())
           .col(ColumnDef::new(Apps::OwnerId).big_integer().not_null())
           .col(
@@ -92,6 +98,38 @@ impl MigrationTrait for Migration {
               .default(Expr::current_timestamp()),
           )
           .col(ColumnDef::new(Apps::DeletedAt).date_time().null())
+          .to_owned(),
+      )
+      .await?;
+
+    manager
+      .create_table(
+        Table::create()
+          .table(Settings::Table)
+          .if_not_exists()
+          .col(
+            ColumnDef::new(Settings::Id)
+              .big_integer()
+              .auto_increment()
+              .primary_key()
+              .not_null(),
+          )
+          .col(ColumnDef::new(Settings::Theme).tiny_integer().null())
+          .col(
+            ColumnDef::new(Settings::BgImage)
+              .string()
+              .string_len(255)
+              .null(),
+          )
+          .col(ColumnDef::new(Settings::BgBlur).tiny_integer().null())
+          .col(ColumnDef::new(Settings::OwnerId).big_integer().not_null())
+          .col(
+            ColumnDef::new(Settings::CreatedAt)
+              .date_time()
+              .not_null()
+              .default(Expr::current_timestamp()),
+          )
+          .col(ColumnDef::new(Settings::DeletedAt).date_time().null())
           .to_owned(),
       )
       .await?;
@@ -143,7 +181,20 @@ enum Apps {
   Id,
   Name,
   Url,
+  Description,
   Icon,
+  OwnerId,
+  CreatedAt,
+  DeletedAt,
+}
+
+#[derive(Iden)]
+enum Settings {
+  Table,
+  Id,
+  Theme,
+  BgImage,
+  BgBlur,
   OwnerId,
   CreatedAt,
   DeletedAt,

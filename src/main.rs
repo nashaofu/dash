@@ -3,11 +3,12 @@ pub mod core;
 pub mod errors;
 pub mod settings;
 
-use actix_files::Files;
+use actix_files::{Files, NamedFile};
 use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{
   cookie::{time, Key},
+  dev::{fn_service, ServiceRequest, ServiceResponse},
   middleware::{Logger, NormalizePath},
   web, App, HttpServer, ResponseError,
 };
@@ -33,7 +34,7 @@ async fn main() -> Result<(), io::Error> {
     .await
     .expect("Database migrate failed");
 
-  log::info!("starting HTTP server at http://0.0.0.0:8080");
+  log::info!("starting HTTP server at http://0.0.0.0:{}", SETTINGS.port);
 
   HttpServer::new(move || {
     App::new()
@@ -66,10 +67,16 @@ async fn main() -> Result<(), io::Error> {
       .service(
         Files::new("/", "./www")
           .index_file("index.html")
-          .use_etag(true),
+          .use_etag(true)
+          .default_handler(fn_service(|req: ServiceRequest| async {
+            let (req, _) = req.into_parts();
+            let file = NamedFile::open_async("./www/index.html").await?;
+            let res = file.into_response(&req);
+            Ok(ServiceResponse::new(req, res))
+          })),
       )
   })
-  .bind(("0.0.0.0", 8080))?
+  .bind(("0.0.0.0", SETTINGS.port))?
   .run()
   .await
 }

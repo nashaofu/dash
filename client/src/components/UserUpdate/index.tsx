@@ -1,38 +1,46 @@
 import { useCallback, useEffect } from 'react';
-import {
-  Form, Input, message, Modal,
-} from 'antd';
-import useRequest from '@/hooks/useRequest';
-import { IUser } from '@/recoil/user';
+import { Form, Input, Modal } from 'antd';
+import { useRequest } from 'ahooks';
+import { IUser } from '@/types/user';
 import fetcher from '@/utils/fetcher';
 import ImageUploader from '../ImageUploader';
 import { IUploadFile, uploadFileToUri, uriToUploadFile } from '@/utils/file';
+import useMessage from '@/hooks/useMessage';
 
 interface IUserModel extends Pick<IUser, 'name' | 'email'> {
-  avatar?: IUploadFile[]
+  avatar?: IUploadFile[];
 }
 
 interface IUserUpdateData extends Omit<IUserModel, 'avatar'> {
-  avatar?: string
+  avatar?: string;
 }
 
 export interface IUserUpdateProps {
-  user?: IUser
-  open: boolean
-  onOk: (user: IUser) => unknown
-  onCancel: () => unknown
+  user?: IUser;
+  open: boolean;
+  onOk: (user: IUser) => unknown;
+  onCancel: () => unknown;
 }
 
 export default function UserUpdate({
-  user, open, onOk, onCancel,
+  user,
+  open,
+  onOk,
+  onCancel,
 }: IUserUpdateProps) {
   const [form] = Form.useForm<IUserModel>();
-  const { loading, fetch } = useRequest((data: IUserUpdateData) => fetcher.put<IUser>('/user/update', data));
+  const { loading, runAsync: updateUser } = useRequest(
+    (data: IUserUpdateData) => fetcher.put('/user/update', data),
+    {
+      manual: true,
+    },
+  );
+  const message = useMessage();
 
   const onFinish = useCallback(async () => {
     const userModel = form.getFieldsValue();
     try {
-      const { data } = await fetch({
+      const { data } = await updateUser({
         name: userModel.name,
         email: userModel.email,
         avatar: uploadFileToUri(userModel.avatar?.[0]),
@@ -43,10 +51,10 @@ export default function UserUpdate({
       message.error('账号设置失败');
       throw err;
     }
-  }, [form, fetch, onOk]);
+  }, [form, message, updateUser, onOk]);
 
   useEffect(() => {
-    if (open) {
+    if (!open) {
       return;
     }
 
@@ -78,7 +86,13 @@ export default function UserUpdate({
         loading,
       }}
     >
-      <Form form={form} layout="vertical" autoComplete="off" onFinish={onFinish} scrollToFirstError>
+      <Form
+        form={form}
+        layout="vertical"
+        autoComplete="off"
+        onFinish={onFinish}
+        scrollToFirstError
+      >
         <Form.Item
           label="用户名"
           name="name"
@@ -93,7 +107,8 @@ export default function UserUpdate({
             {
               type: 'string',
               pattern: /^[a-zA-Z0-9]\w{4,29}$/,
-              message: '用户名必须为字母、数字与下划线组成的 5-30 个字符，且只能由字母或数字开头',
+              message:
+                '用户名必须为字母、数字与下划线组成的 5-30 个字符，且只能由字母或数字开头',
             },
           ]}
         >

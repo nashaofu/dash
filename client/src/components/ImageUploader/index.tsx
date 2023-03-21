@@ -1,30 +1,41 @@
 import { useCallback } from 'react';
-import { message, Upload } from 'antd';
+import { Upload, theme } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { IUploadFile } from '@/utils/file';
-import styles from './index.module.scss';
+import useMessage from '@/hooks/useMessage';
+import styles from './index.module.less';
 
 export interface IUploadOnChangeOpts {
-  fileList: IUploadFile[]
+  fileList: IUploadFile[];
 }
 
 export interface IImageUploaderProps {
-  value?: IUploadFile[]
-  maxCount?: number
-  onChange?: (val: IUploadFile[]) => unknown
+  value?: IUploadFile[];
+  maxCount?: number;
+  onChange?: (val: IUploadFile[]) => unknown;
 }
 
-export default function ImageUploader({ value = [], maxCount, onChange }: IImageUploaderProps) {
+export default function ImageUploader({
+  value = [],
+  maxCount,
+  onChange,
+}: IImageUploaderProps) {
   const isShowBtn = maxCount == null || value.length < maxCount;
+  const message = useMessage();
+  const { token } = theme.useToken();
 
-  const beforeUpload = useCallback((file: File) => {
-    const types = ['image/png', 'image/jpeg'];
-    if (!types.includes(file.type)) {
-      message.error('只支持png与jpeg格式的图片');
-      return Upload.LIST_IGNORE;
-    }
+  const beforeUpload = useCallback(
+    (file: File) => {
+      const types = ['image/png', 'image/jpeg'];
+      if (!types.includes(file.type)) {
+        message.error('只支持png与jpeg格式的图片');
+        return Upload.LIST_IGNORE;
+      }
 
-    return true;
-  }, []);
+      return true;
+    },
+    [message],
+  );
 
   const onUploadChange = useCallback(
     (e: IUploadOnChangeOpts) => {
@@ -44,8 +55,13 @@ export default function ImageUploader({ value = [], maxCount, onChange }: IImage
       onChange={onUploadChange}
     >
       {isShowBtn && (
-        <div className={styles.icon}>
-          <span className="iconfont icon-add" />
+        <div
+          className={styles.btn}
+          style={{
+            color: `${token.colorTextSecondary}`,
+          }}
+        >
+          <PlusOutlined />
         </div>
       )}
     </Upload>

@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use sea_orm::{
   entity::Set, ActiveModelTrait, ColumnTrait, Condition, DbConn, DbErr, DeleteResult, EntityTrait,
-  IntoActiveModel, ModelTrait, QueryFilter, RuntimeErr::SqlxError,
+  IntoActiveModel, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, RuntimeErr::SqlxError,
 };
 use serde::{Deserialize, Serialize};
 use utils::crypto;
@@ -26,7 +26,7 @@ pub struct LoginData {
 }
 
 pub async fn login(db: &DbConn, data: &LoginData) -> Result<users::Model, AppError> {
-  users::Entity::find()
+  let user = users::Entity::find()
     .filter(
       Condition::any()
         .add(users::Column::Name.eq(&data.login))
@@ -34,27 +34,56 @@ pub async fn login(db: &DbConn, data: &LoginData) -> Result<users::Model, AppErr
     )
     .one(db)
     .await?
-    .and_then(|user| {
-      crypto::verify(&user.password, &data.password)
-        .ok()
-        .map(|_| user)
-    })
     .ok_or(AppError::new(
       StatusCode::UNAUTHORIZED,
-      401,
-      "用户名、邮箱或密码错误",
-    ))
+      404,
+      "用户名或邮箱不存在",
+    ))?;
+
+  crypto::verify(&user.password, &data.password)
+    .map_err(AppError::from_err)?
+    .then_some(user)
+    .ok_or(AppError::new(StatusCode::UNAUTHORIZED, 401, "密码错误"))
 }
 
 pub async fn get_user_info(db: &DbConn, id: i64) -> Result<users::Model, AppError> {
   users::Entity::find_by_id(id)
     .one(db)
     .await?
-    .ok_or(AppError::new(
-      StatusCode::NOT_FOUND,
-      404,
-      "用户信息不存在",
-    ))
+    .ok_or(AppError::new(StatusCode::NOT_FOUND, 404, "用户信息不存在"))
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GetUserListQuery {
+  page: Option<u64>,
+  size: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GetUserListRes {
+  items: Vec<users::Model>,
+  total: u64,
+}
+
+pub async fn get_user_list(
+  db: &DbConn,
+  operator_id: i64,
+  data: &GetUserListQuery,
+) -> Result<GetUserListRes, AppError> {
+  users::Entity::find_by_id(operator_id)
+    .filter(users::Column::IsAdmin.eq(true))
+    .one(db)
+    .await?
+    .ok_or(AppError::new(StatusCode::FORBIDDEN, 403, "没有权限"))?;
+
+  let user_pages = users::Entity::find()
+    .order_by_asc(users::Column::CreatedAt)
+    .paginate(db, data.size.unwrap_or(10));
+
+  let items = user_pages.fetch_page(data.page.unwrap_or(1) - 1).await?;
+  let total = user_pages.num_items().await?;
+
+  Ok(GetUserListRes { items, total })
 }
 
 #[derive(Debug, Validate, Serialize, Deserialize)]
@@ -113,9 +142,7 @@ pub async fn create_user(
     DbErr::Query(SqlxError(_)) => {
       AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册")
     }
-    DbErr::Exec(SqlxError(_)) => {
-      AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册")
-    }
+    DbErr::Exec(SqlxError(_)) => AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册"),
     e => e.into(),
   })
 }
@@ -155,9 +182,7 @@ pub async fn update_user(
     DbErr::Query(SqlxError(_)) => {
       AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册")
     }
-    DbErr::Exec(SqlxError(_)) => {
-      AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册")
-    }
+    DbErr::Exec(SqlxError(_)) => AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册"),
     e => e.into(),
   })
 }

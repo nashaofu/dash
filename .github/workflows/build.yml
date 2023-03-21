@@ -3,11 +3,11 @@ name: build
 on:
   workflow_dispatch: # 手动触发
   push:
-    branches: ['master']
+    branches: ["master"]
     # Publish semver tags as releases.
-    tags: ['v*.*.*']
+    tags: ["v*.*.*"]
   pull_request:
-    branches: ['master']
+    branches: ["master"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -27,14 +27,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: latest
-          cache: 'yarn'
+          cache: "yarn"
           cache-dependency-path: client/yarn.lock
       - name: Build client
         run: cd client && yarn && yarn build
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: wego-client
+          name: dash-client
           path: client/dist
           if-no-files-found: error
   build-server:
@@ -56,13 +56,13 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: rust:latest
-          options: '--user 0:0 -v ${{ github.workspace }}:/build -w /build'
-          run: cargo install --path . && strip target/release/wego
+          options: "--user 0:0 -v ${{ github.workspace }}:/build -w /build"
+          run: cargo install --path . && strip target/release/dash
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: wego-server
-          path: target/release/wego
+          name: dash-server
+          path: target/release/dash
           if-no-files-found: error
   publish:
     runs-on: ubuntu-latest
@@ -72,25 +72,25 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Download wego-client artifact
+      - name: Download dash-client artifact
         uses: actions/download-artifact@v3
         with:
-          name: wego-client
+          name: dash-client
           path: www
-      - name: Download wego-server artifact
+      - name: Download dash-server artifact
         uses: actions/download-artifact@v3
         with:
-          name: wego-server
+          name: dash-server
           path: .
       - name: Display structure of downloaded files
         run: ls -R
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: wego
+          name: dash
           path: |
             www
-            wego
+            dash
           if-no-files-found: error
 
   build-docker:
@@ -117,18 +117,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download wego-client artifact
+      - name: Download dash-client artifact
         uses: actions/download-artifact@v3
         with:
-          name: wego-client
+          name: dash-client
           path: client/dist
-      - name: Download wego-server artifact
+      - name: Download dash-server artifact
         uses: actions/download-artifact@v3
         with:
-          name: wego-server
+          name: dash-server
           path: target/release
       - name: Display structure of downloaded files
         run: ls -R
+
+      - name: Change file mode
+        run: chmod +x target/release/dash
 
       - name: Build and push Docker images
         uses: docker/build-push-action@v4
@@ -136,4 +139,4 @@ jobs:
           context: .
           file: build.Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.REGISTRY }}/nashaofu/wego:latest
+          tags: ${{ env.REGISTRY }}/nashaofu/dash:latest

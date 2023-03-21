@@ -1,7 +1,7 @@
 use crate::{core::app, errors::Result};
 
 use actix_identity::Identity;
-use actix_web::{delete, get, post, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use sea_orm::DbConn;
 
 #[get("/all")]
@@ -26,7 +26,7 @@ async fn create(
   Ok(HttpResponse::Ok().json(created_app))
 }
 
-#[post("/update")]
+#[put("/update")]
 async fn update(
   identity: Identity,
   db: web::Data<DbConn>,

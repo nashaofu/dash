@@ -26,6 +26,8 @@ pub struct CreateAppData {
   url: String,
   #[validate(length(min = 1, max = 30, message = "应用名称长度不得超过 30 个字符"))]
   name: String,
+  #[validate(length(min = 1, max = 255, message = "应用描述长度不得超过 255 个字符"))]
+  description: Option<String>,
   #[validate(length(min = 1, max = 255, message = "应用图标长度不得超过 255 个字符"))]
   icon: Option<String>,
 }
@@ -39,6 +41,7 @@ pub async fn create_app(
     name: Set(data.name.clone()),
     url: Set(data.url.clone()),
     icon: Set(data.icon.clone()),
+    description: Set(data.description.clone()),
     owner_id: Set(operator_id),
     ..Default::default()
   }
@@ -57,6 +60,8 @@ pub struct UpdateAppData {
   url: String,
   #[validate(length(min = 1, max = 30, message = "应用名称长度不得超过 30 个字符"))]
   name: String,
+  #[validate(length(min = 1, max = 255, message = "应用描述长度不得超过 255 个字符"))]
+  description: Option<String>,
   #[validate(length(min = 1, max = 255, message = "应用图标长度不得超过 255 个字符"))]
   icon: Option<String>,
 }
@@ -75,6 +80,7 @@ pub async fn update_app(
 
   app.name = Set(data.name.clone());
   app.url = Set(data.url.clone());
+  app.description = Set(data.description.clone());
   app.icon = Set(data.icon.clone());
 
   app.update(db).await.map_err(Into::into)

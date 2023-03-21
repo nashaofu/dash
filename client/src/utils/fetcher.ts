@@ -6,8 +6,17 @@ const fetcher = axios.create({
 });
 
 fetcher.interceptors.response.use(
-  (data) => data,
-  (err) => Promise.reject(err),
+  (data) => data.data,
+  (err) => {
+    if (
+      err?.response?.status === 401
+      && !window.location.pathname.startsWith('/login')
+    ) {
+      window.location.replace('/login');
+    }
+
+    return Promise.reject(err);
+  },
 );
 
 export default fetcher;

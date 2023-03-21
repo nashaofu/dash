@@ -1,7 +1,7 @@
 import { UploadFile } from 'antd';
 
 export interface IUploadResp {
-  uri: string
+  uri: string;
 }
 
 export type IUploadFile = UploadFile<IUploadResp>;

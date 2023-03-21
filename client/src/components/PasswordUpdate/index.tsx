@@ -1,30 +1,39 @@
 import { useCallback, useEffect } from 'react';
-import {
-  Form, Input, message, Modal,
-} from 'antd';
-import useRequest from '@/hooks/useRequest';
+import { Form, Input, Modal } from 'antd';
+import { useRequest } from 'ahooks';
 import fetcher from '@/utils/fetcher';
+import useMessage from '@/hooks/useMessage';
 
 interface IPasswordUpdateModel {
-  old_password: string
-  password: string
-  confirm_password: string
+  old_password: string;
+  password: string;
+  confirm_password: string;
 }
 
 export interface IPasswordUpdateProps {
-  open: boolean
-  onOk: () => unknown
-  onCancel: () => unknown
+  open: boolean;
+  onOk: () => unknown;
+  onCancel: () => unknown;
 }
 
-export default function PasswordUpdate({ open, onOk, onCancel }: IPasswordUpdateProps) {
+export default function PasswordUpdate({
+  open,
+  onOk,
+  onCancel,
+}: IPasswordUpdateProps) {
   const [form] = Form.useForm<IPasswordUpdateModel>();
-  const { loading, fetch } = useRequest((data: IPasswordUpdateModel) => fetcher.put('/password/update', data));
+  const { loading, runAsync: updatePassword } = useRequest(
+    (data: IPasswordUpdateModel) => fetcher.put('/password/update', data),
+    {
+      manual: true,
+    },
+  );
+  const message = useMessage();
 
   const onFinish = useCallback(async () => {
     const passwordUpdateModel = form.getFieldsValue();
     try {
-      await fetch({
+      await updatePassword({
         old_password: passwordUpdateModel.old_password,
         password: passwordUpdateModel.password,
         confirm_password: passwordUpdateModel.confirm_password,
@@ -35,10 +44,10 @@ export default function PasswordUpdate({ open, onOk, onCancel }: IPasswordUpdate
       message.error('密码设置失败');
       throw err;
     }
-  }, [form, fetch, onOk]);
+  }, [form, message, updatePassword, onOk]);
 
   useEffect(() => {
-    if (open) {
+    if (!open) {
       return;
     }
 
@@ -62,7 +71,13 @@ export default function PasswordUpdate({ open, onOk, onCancel }: IPasswordUpdate
         loading,
       }}
     >
-      <Form form={form} layout="vertical" autoComplete="off" onFinish={onFinish} scrollToFirstError>
+      <Form
+        form={form}
+        layout="vertical"
+        autoComplete="off"
+        onFinish={onFinish}
+        scrollToFirstError
+      >
         <Form.Item
           label="旧密码"
           name="old_password"
@@ -116,7 +131,8 @@ export default function PasswordUpdate({ open, onOk, onCancel }: IPasswordUpdate
             {
               type: 'string',
               pattern: /^[\x21-\x7e]{8,30}$/,
-              message: '重复密码必须为 ASCII 码中的可见字符组成的 8 - 30 个字符',
+              message:
+                '重复密码必须为 ASCII 码中的可见字符组成的 8 - 30 个字符',
             },
             ({ getFieldValue }) => ({
               validator: async (_, value) => {

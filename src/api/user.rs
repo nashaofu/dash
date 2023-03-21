@@ -13,6 +13,18 @@ async fn info(identity: Identity, db: web::Data<DbConn>) -> Result<impl Responde
   Ok(HttpResponse::Ok().json(user_info))
 }
 
+#[get("/list")]
+async fn list(
+  identity: Identity,
+  db: web::Data<DbConn>,
+  query: web::Query<user::GetUserListQuery>,
+) -> Result<impl Responder> {
+  let operator_id = identity.id().map(|id| id.parse::<i64>())??;
+
+  let user_list_res = user::get_user_list(&db, operator_id, &query).await?;
+  Ok(HttpResponse::Ok().json(user_list_res))
+}
+
 #[post("/create")]
 async fn create(
   identity: Identity,

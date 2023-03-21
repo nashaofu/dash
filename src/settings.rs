@@ -31,6 +31,7 @@ impl Default for Database {
 
 #[derive(Debug)]
 pub struct Settings {
+  pub port: u16,
   // 数据库地址
   pub database: Database,
   pub data_dir: PathBuf,
@@ -44,11 +45,14 @@ impl Settings {
       .add_source(config::File::with_name(&config_file).required(false))
       .build()?;
 
+    let port = config.get::<u16>("port").unwrap_or(3000);
+
     let database = config
       .get::<Database>("database")
       .unwrap_or(Database::default());
 
     let settings = Settings {
+      port,
       database,
       data_dir: DATA_DIR.to_path_buf(),
       files_dir: DATA_DIR.join("files"),

@@ -2,6 +2,7 @@ mod app;
 mod auth;
 mod file;
 mod password;
+mod setting;
 mod user;
 
 use actix_web::web;
@@ -17,6 +18,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
     .service(
       web::scope("/user")
         .service(user::info)
+        .service(user::list)
         .service(user::create)
         .service(user::update)
         .service(user::delete),
@@ -28,5 +30,10 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(app::create)
         .service(app::update)
         .service(app::delete),
+    )
+    .service(
+      web::scope("/setting")
+        .service(setting::get)
+        .service(setting::update),
     );
 }
