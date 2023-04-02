@@ -2,30 +2,39 @@ import {
   Form, Input, Button, Spin, Checkbox, theme,
 } from 'antd';
 import { useCallback } from 'react';
-import { useRequest, useLocalStorageState } from 'ahooks';
+import { useNavigate } from 'react-router-dom';
+import useSWRMutation from '@/hooks/useSWRMutation';
 import fetcher from '@/utils/fetcher';
-import useSetting from '@/store/setting';
+import useUser from '@/store/user';
 import styles from './index.module.less';
+import { IUser } from '@/types/user';
+import useLocalStorage from '@/hooks/useLocalStorage';
 
-interface LoginData {
+interface ILoginData {
   login: string;
   password: string;
 }
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { mutate: mutateUser } = useUser();
   const {
-    loading,
+    isMutating,
     error,
-    runAsync: login,
-  } = useRequest((data: LoginData) => fetcher.post('/auth/login', data), {
-    manual: true,
+    trigger: login,
+  } = useSWRMutation<ILoginData, IUser>('/auth/login', fetcher.post, {
+    onSuccess: (data) => {
+      mutateUser(data);
+      navigate('/', { replace: true });
+    },
   });
-  const [loginStorage, setLoginStorage] = useLocalStorageState('Dash.login');
-  const { refresh: refreshSetting } = useSetting({ manual: true });
+
+  const [loginStorage, setLoginStorage] = useLocalStorage<string>('login');
 
   const { token } = theme.useToken();
 
-  const [form] = Form.useForm<LoginData & { remember: boolean }>();
+  const [form] = Form.useForm<ILoginData & { remember: boolean }>();
+
   const onFinish = useCallback(async () => {
     const { remember, ...model } = form.getFieldsValue();
     if (remember) {
@@ -33,10 +42,8 @@ export default function Login() {
     } else {
       setLoginStorage(undefined);
     }
-    await login(model);
-    refreshSetting();
-    window.location.replace('/');
-  }, [form, login, refreshSetting, setLoginStorage]);
+    login(model);
+  }, [form, login, setLoginStorage]);
 
   return (
     <div
@@ -46,7 +53,7 @@ export default function Login() {
         color: token.colorText,
       }}
     >
-      <Spin spinning={loading}>
+      <Spin spinning={isMutating}>
         <div className={styles.logo}>
           <div className={styles.logoIcon}>Dash</div>
           <div className={styles.logoText}>我的私有的导航站</div>
@@ -107,7 +114,7 @@ export default function Login() {
             </Button>
           </Form.Item>
         </Form>
-        {error && (
+        {!!error && (
           <div
             className={styles.error}
             style={{

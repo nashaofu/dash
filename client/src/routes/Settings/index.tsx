@@ -2,15 +2,16 @@ import {
   Button, Card, Form, InputNumber, Radio, Space, Spin,
 } from 'antd';
 import { useCallback, useEffect } from 'react';
-import { useBoolean, useRequest } from 'ahooks';
 import { EditOutlined, SaveOutlined } from '@ant-design/icons';
 import { get } from 'lodash-es';
+import useSWRMutation from '@/hooks/useSWRMutation';
+import useBoolean from '@/hooks/useBoolean';
 import fetcher from '@/utils/fetcher';
 import { IUploadFile, uploadFileToUri, uriToUploadFile } from '@/utils/file';
 import ImageUploader from '@/components/ImageUploader';
-import { ISetting, ISettingTheme } from '@/types/setting';
+import { ISetting, ISettingTheme } from '@/types/user';
 import useMessage from '@/hooks/useMessage';
-import useSetting from '@/store/setting';
+import useUser from '@/store/user';
 import styles from './index.module.less';
 
 interface ISettingsModel extends Pick<ISetting, 'theme' | 'bg_blur'> {
@@ -24,33 +25,32 @@ interface ISettingsUpdateData extends Omit<ISettingsModel, 'bg_image'> {
 export default function Settings() {
   const [form] = Form.useForm<ISettingsModel>();
   const {
-    data: setting,
-    loading: fetchSettingLoading,
-    refresh: refreshSetting,
-  } = useSetting({
-    manual: true,
-  });
+    data: user,
+    isLoading: fetchUserLoading,
+    mutate: mutateUser,
+  } = useUser();
+
+  const setting = user?.setting;
 
   const [isEditable, isEditableActions] = useBoolean(false);
   const message = useMessage();
 
-  const { loading: updateSettingLoading, runAsync: updateSetting } = useRequest(
-    (data: ISettingsUpdateData) => fetcher.put('/setting/update', data),
+  const { isMutating: updateSettingLoading, trigger: updateSetting } = useSWRMutation<ISettingsUpdateData>(
+    '/setting/update',
+    fetcher.put,
     {
-      manual: true,
-      onSuccess: () => refreshSetting(),
+      onSuccess: () => {
+        mutateUser();
+      },
     },
   );
 
-  const loading = fetchSettingLoading || updateSettingLoading;
+  const loading = fetchUserLoading || updateSettingLoading;
 
   const onFinish = useCallback(async () => {
     const settingsModel = form.getFieldsValue();
     const bgImage = uploadFileToUri(settingsModel.bg_image?.[0]);
-    if (!bgImage) {
-      message.error('请上传背景图片');
-      return;
-    }
+
     try {
       await updateSetting({
         theme: settingsModel.theme,
@@ -72,7 +72,7 @@ export default function Settings() {
     form.setFieldsValue({
       theme: setting.theme,
       bg_image: setting.bg_image ? [uriToUploadFile(setting.bg_image)] : [],
-      bg_blur: setting.bg_blur,
+      bg_blur: setting.bg_blur ?? 0,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setting]);
@@ -119,15 +119,16 @@ export default function Settings() {
               rules={[
                 {
                   required: true,
-                  type: 'number',
+                  type: 'enum',
+                  enum: [ISettingTheme.Light, ISettingTheme.Dark],
                   message: '请选择主题',
                 },
               ]}
             >
               <Radio.Group
                 options={[
-                  { value: ISettingTheme.light, label: '浅色主题' },
-                  { value: ISettingTheme.dark, label: '暗黑主题' },
+                  { value: ISettingTheme.Light, label: '浅色主题' },
+                  { value: ISettingTheme.Dark, label: '暗黑主题' },
                 ]}
                 optionType="button"
                 buttonStyle="solid"
@@ -136,16 +137,14 @@ export default function Settings() {
             <Form.Item
               label="背景图片"
               name="bg_image"
-              required
               validateFirst
               rules={[
                 {
                   validateTrigger: 'onSubmit',
                   validator: async (_, value?: IUploadFile[]) => {
-                    if (!value?.[0]) {
-                      throw new Error('请上传背景图片');
+                    if (!value?.length) {
+                      return;
                     }
-
                     if (value[0].status !== 'done') {
                       throw new Error('文件没有上传完成');
                     }
@@ -159,7 +158,7 @@ export default function Settings() {
             >
               <ImageUploader maxCount={1} />
             </Form.Item>
-            <Form.Item label="背景模糊" name="bg_blur" required validateFirst>
+            <Form.Item label="背景模糊" name="bg_blur" validateFirst>
               <InputNumber min={0} max={20} addonAfter="px" />
             </Form.Item>
           </Form>

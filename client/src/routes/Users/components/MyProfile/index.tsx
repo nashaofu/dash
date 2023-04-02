@@ -3,7 +3,7 @@ import {
   Avatar, Button, Space, Table, TableColumnsType,
 } from 'antd';
 import dayjs from 'dayjs';
-import { useBoolean } from 'ahooks';
+import useBoolean from '@/hooks/useBoolean';
 import UserUpdate from '@/components/UserUpdate';
 import PasswordUpdate from '@/components/PasswordUpdate';
 import { IUser } from '@/types/user';

@@ -29,11 +29,8 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(app::all)
         .service(app::create)
         .service(app::update)
+        .service(app::sort)
         .service(app::delete),
     )
-    .service(
-      web::scope("/setting")
-        .service(setting::get)
-        .service(setting::update),
-    );
+    .service(web::scope("/setting").service(setting::update));
 }

@@ -9,19 +9,15 @@ import {
   Avatar, Button, Space, Table, TableColumnsType, Tag,
 } from 'antd';
 import dayjs from 'dayjs';
-import { useRequest } from 'ahooks';
+import useSWR from 'swr';
 import { get } from 'lodash-es';
+import useSWRMutation from '@/hooks/useSWRMutation';
 import fetcher from '@/utils/fetcher';
 import { IUser } from '@/types/user';
 import { uriToUrl } from '@/utils/file';
 import styles from './index.module.less';
 import useModal from '@/hooks/useModal';
 import useMessage from '@/hooks/useMessage';
-
-interface IFetchUserListParams {
-  page?: number;
-  size?: number;
-}
 
 interface IFetchUserListRes {
   items: IUser[];
@@ -33,25 +29,21 @@ interface IUserManageProps {
   loading?: boolean;
 }
 
-const defaultFetchUserListParams = {
-  page: 1,
-  size: 10,
-};
-
 export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const {
     data,
-    loading: fetchUserListLoading,
-    run: fetchUserList,
-  } = useRequest(
-    (params: IFetchUserListParams = defaultFetchUserListParams) => {
-      setPage(params.page ?? defaultFetchUserListParams.page);
-      setSize(params.size ?? defaultFetchUserListParams.size);
-      return fetcher.get<unknown, IFetchUserListRes>('/user/list', { params });
+    isValidating: fetchUserListLoading,
+    mutate: mutateUserList,
+  } = useSWR(
+    ['/user/list', { page, size }],
+    ([url, params]) => fetcher.get<unknown, IFetchUserListRes>(url, { params }),
+    {
+      revalidateOnFocus: false,
     },
   );
+
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
 
@@ -59,14 +51,16 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
   const message = useMessage();
 
   useImperativeHandle(ref, () => ({
-    fetchUserList,
+    fetchUserList: mutateUserList,
   }));
 
-  const { runAsync: deleteUser } = useRequest(
-    (id: string) => fetcher.delete(`/user/delete/${id}`),
+  const { trigger: deleteUser } = useSWRMutation<string>(
+    '/user/delete',
+    (url, id) => fetcher.delete(`${url}/${id}`),
     {
-      manual: true,
-      onSuccess: () => fetchUserList(),
+      onSuccess: () => {
+        setPage(1);
+      },
       onError: (err) => {
         message.error(get(err, 'response.data.message', '删除失败'));
       },
@@ -85,13 +79,11 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
   );
 
   const onPaginationChange = useCallback(
-    (current: number, pageSize: number) => {
-      fetchUserList({
-        page: current,
-        size: pageSize,
-      });
+    async (current: number, pageSize: number) => {
+      setPage(current);
+      setSize(pageSize);
     },
-    [fetchUserList],
+    [],
   );
 
   const columns: TableColumnsType<IUser> = useMemo(
@@ -170,6 +162,7 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
         current: page,
         pageSize: size,
         total,
+        showTotal: () => `共 ${total} 条记录`,
         onChange: onPaginationChange,
         onShowSizeChange: onPaginationChange,
       }}

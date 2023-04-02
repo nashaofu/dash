@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
+import { SWRConfig } from 'swr';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import './styles/index.less';
@@ -10,6 +11,8 @@ dayjs.locale('zh-cn');
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
-    <Dash />
+    <SWRConfig>
+      <Dash />
+    </SWRConfig>
   </StrictMode>,
 );

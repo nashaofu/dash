@@ -47,6 +47,7 @@ impl MigrationTrait for Migration {
               .string_len(255)
               .null(),
           )
+          .col(ColumnDef::new(Users::Setting).json().null())
           .col(ColumnDef::new(Users::IsAdmin).boolean().not_null())
           .col(
             ColumnDef::new(Users::CreatedAt)
@@ -90,6 +91,7 @@ impl MigrationTrait for Migration {
               .null(),
           )
           .col(ColumnDef::new(Apps::Icon).string().string_len(255).null())
+          .col(ColumnDef::new(Apps::Index).integer().not_null())
           .col(ColumnDef::new(Apps::OwnerId).big_integer().not_null())
           .col(
             ColumnDef::new(Apps::CreatedAt)
@@ -98,38 +100,6 @@ impl MigrationTrait for Migration {
               .default(Expr::current_timestamp()),
           )
           .col(ColumnDef::new(Apps::DeletedAt).date_time().null())
-          .to_owned(),
-      )
-      .await?;
-
-    manager
-      .create_table(
-        Table::create()
-          .table(Settings::Table)
-          .if_not_exists()
-          .col(
-            ColumnDef::new(Settings::Id)
-              .big_integer()
-              .auto_increment()
-              .primary_key()
-              .not_null(),
-          )
-          .col(ColumnDef::new(Settings::Theme).tiny_integer().null())
-          .col(
-            ColumnDef::new(Settings::BgImage)
-              .string()
-              .string_len(255)
-              .null(),
-          )
-          .col(ColumnDef::new(Settings::BgBlur).tiny_integer().null())
-          .col(ColumnDef::new(Settings::OwnerId).big_integer().not_null())
-          .col(
-            ColumnDef::new(Settings::CreatedAt)
-              .date_time()
-              .not_null()
-              .default(Expr::current_timestamp()),
-          )
-          .col(ColumnDef::new(Settings::DeletedAt).date_time().null())
           .to_owned(),
       )
       .await?;
@@ -170,6 +140,7 @@ enum Users {
   Email,
   Password,
   Avatar,
+  Setting,
   IsAdmin,
   CreatedAt,
   DeletedAt,
@@ -183,18 +154,7 @@ enum Apps {
   Url,
   Description,
   Icon,
-  OwnerId,
-  CreatedAt,
-  DeletedAt,
-}
-
-#[derive(Iden)]
-enum Settings {
-  Table,
-  Id,
-  Theme,
-  BgImage,
-  BgBlur,
+  Index,
   OwnerId,
   CreatedAt,
   DeletedAt,

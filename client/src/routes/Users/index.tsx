@@ -2,42 +2,37 @@ import {
   useCallback, useMemo, useRef, useState,
 } from 'react';
 import { Button, Card, Space } from 'antd';
-import { useBoolean, useRequest } from 'ahooks';
 import { useNavigate } from 'react-router-dom';
 import { LogoutOutlined, PlusOutlined } from '@ant-design/icons';
+import useSWRMutation from '@/hooks/useSWRMutation';
+import useBoolean from '@/hooks/useBoolean';
 import fetcher from '@/utils/fetcher';
-import { IUser } from '@/types/user';
 import UserCreate from '@/components/UserCreate';
 import MyProfile from './components/MyProfile';
 import UserManage from './components/UserManage';
 import styles from './index.module.less';
 import useMessage from '@/hooks/useMessage';
-import useSetting from '@/store/setting';
+import useUser from '@/store/user';
 
 export default function Users() {
+  const navigate = useNavigate();
   const {
     data: user,
-    loading: fetchUserInfoLoading,
-    run: fetchUserInfo,
-  } = useRequest(() => fetcher.get<unknown, IUser>('/user/info'));
-
-  const navigate = useNavigate();
+    isValidating: fetchUserInfoLoading,
+    mutate: mutateUser,
+  } = useUser();
 
   const [isOpenUserCreate, isOpenUserCreateActions] = useBoolean(false);
 
   const userManageRef = useRef<{ fetchUserList:() => unknown }>(null);
 
   const message = useMessage();
-  const { clear: clearSetting } = useSetting({
-    manual: true,
-  });
 
-  const { run: logout, loading: logoutLoading } = useRequest(
-    () => fetcher.post('/auth/logout'),
+  const { isMutating: logoutLoading, trigger: logout } = useSWRMutation(
+    '/auth/logout',
+    fetcher.post,
     {
-      manual: true,
       onSuccess: () => {
-        clearSetting();
         navigate('/login');
       },
       onError: () => {
@@ -49,9 +44,9 @@ export default function Users() {
   const loading = fetchUserInfoLoading || logoutLoading;
 
   const onUserUpdate = useCallback(() => {
-    fetchUserInfo();
+    mutateUser();
     userManageRef.current?.fetchUserList();
-  }, [fetchUserInfo]);
+  }, [mutateUser]);
 
   const tabContent = {
     MyProfile: (

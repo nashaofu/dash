@@ -1,27 +1,23 @@
 import { theme } from 'antd';
+import cls from 'classnames';
 import { IApp } from '@/types/app';
 import AppIcon from '../AppIcon';
 import styles from './index.module.less';
 
 export interface IAppProps {
   app: IApp;
+  className?: string;
+  clickable?: boolean;
 }
 
-export default function App({ app }: IAppProps) {
+export default function App({ app, className, clickable = true }: IAppProps) {
   const { token } = theme.useToken();
-
-  return (
-    <a
-      href={app.url}
-      title={app.name}
-      className={styles.app}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        backgroundColor: token.colorBgContainer,
-        border: `1px solid ${token.colorBgBase}`,
-      }}
-    >
+  const style = {
+    backgroundColor: token.colorBgContainer,
+    border: `1px solid ${token.colorBgBase}`,
+  };
+  const body = (
+    <>
       <div className={styles.icon}>
         <AppIcon app={app} />
       </div>
@@ -43,6 +39,27 @@ export default function App({ app }: IAppProps) {
           {app.description}
         </div>
       </div>
-    </a>
+    </>
+  );
+
+  if (clickable) {
+    return (
+      <a
+        className={cls(styles.app, className)}
+        style={style}
+        href={app.url}
+        title={app.name}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {body}
+      </a>
+    );
+  }
+
+  return (
+    <div className={cls(styles.app, className)} style={style} title={app.name}>
+      {body}
+    </div>
   );
 }
