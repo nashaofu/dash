@@ -23,9 +23,11 @@ module.exports = {
   builtins: {
     html: [
       {
-        template: "./index.html",
+        template: "index.html",
+        favicon: "favicon.ico",
+        minify: true,
       },
-    ]
+    ],
   },
   devServer: {
     historyApiFallback: true,
