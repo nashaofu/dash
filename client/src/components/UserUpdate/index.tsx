@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
-import { useRequest } from 'ahooks';
+import useSWRMutation from '@/hooks/useSWRMutation';
 import { IUser } from '@/types/user';
 import fetcher from '@/utils/fetcher';
 import ImageUploader from '../ImageUploader';
@@ -29,29 +29,32 @@ export default function UserUpdate({
   onCancel,
 }: IUserUpdateProps) {
   const [form] = Form.useForm<IUserModel>();
-  const { loading, runAsync: updateUser } = useRequest(
-    (data: IUserUpdateData) => fetcher.put('/user/update', data),
-    {
-      manual: true,
+
+  const { isMutating, trigger: updateUser } = useSWRMutation<
+  IUserUpdateData,
+  IUser
+  >('/user/update', fetcher.put, {
+    onSuccess: (data) => {
+      onOk(data);
     },
-  );
+  });
+
   const message = useMessage();
 
   const onFinish = useCallback(async () => {
     const userModel = form.getFieldsValue();
     try {
-      const { data } = await updateUser({
+      await updateUser({
         name: userModel.name,
         email: userModel.email,
         avatar: uploadFileToUri(userModel.avatar?.[0]),
       });
-      onOk(data);
       message.success('账号设置成功');
     } catch (err) {
       message.error('账号设置失败');
       throw err;
     }
-  }, [form, message, updateUser, onOk]);
+  }, [form, message, updateUser]);
 
   useEffect(() => {
     if (!open) {
@@ -76,14 +79,14 @@ export default function UserUpdate({
       open={open}
       onOk={form.submit}
       onCancel={onCancel}
-      closable={!loading}
+      closable={!isMutating}
       maskClosable={false}
       keyboard={false}
       okButtonProps={{
-        loading,
+        loading: isMutating,
       }}
       cancelButtonProps={{
-        loading,
+        loading: isMutating,
       }}
     >
       <Form

@@ -1,0 +1,52 @@
+.draggable {
+  position: relative;
+  cursor: pointer;
+  &:hover {
+    .body {
+      opacity: 1;
+    }
+  }
+}
+
+.dragging {
+  z-index: 9999;
+}
+
+.body {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  padding: 12px;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.holder {
+  min-width: 56px;
+  border-radius: 50%;
+  cursor: grab;
+}
+
+.holderIcon {
+  transform: translateY(2px);
+}
+
+.name {
+  flex-grow: 1;
+  padding: 0 12px;
+  line-height: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editBtn {
+  text-align: right;
+}

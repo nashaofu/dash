@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
-import { useRequest } from 'ahooks';
+import useSWRMutation from '@/hooks/useSWRMutation';
 import fetcher from '@/utils/fetcher';
 import useMessage from '@/hooks/useMessage';
 
@@ -22,12 +22,8 @@ export default function PasswordUpdate({
   onCancel,
 }: IPasswordUpdateProps) {
   const [form] = Form.useForm<IPasswordUpdateModel>();
-  const { loading, runAsync: updatePassword } = useRequest(
-    (data: IPasswordUpdateModel) => fetcher.put('/password/update', data),
-    {
-      manual: true,
-    },
-  );
+  const { isMutating, trigger: updatePassword } = useSWRMutation<IPasswordUpdateModel>('/password/update', fetcher.put);
+
   const message = useMessage();
 
   const onFinish = useCallback(async () => {
@@ -61,14 +57,14 @@ export default function PasswordUpdate({
       open={open}
       onOk={form.submit}
       onCancel={onCancel}
-      closable={!loading}
+      closable={!isMutating}
       maskClosable={false}
       keyboard={false}
       okButtonProps={{
-        loading,
+        loading: isMutating,
       }}
       cancelButtonProps={{
-        loading,
+        loading: isMutating,
       }}
     >
       <Form

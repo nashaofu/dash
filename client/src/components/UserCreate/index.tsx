@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
 import { get } from 'lodash-es';
-import { useRequest } from 'ahooks';
+import useSWRMutation from '@/hooks/useSWRMutation';
 import { IUser } from '@/types/user';
 import fetcher from '@/utils/fetcher';
 import ImageUploader from '../ImageUploader';
@@ -20,31 +20,31 @@ interface IUserCreateData extends Omit<IUserModel, 'avatar'> {
 
 export interface IUserCreateProps {
   open: boolean;
-  onOk: (user: IUser) => unknown;
+  onOk: () => unknown;
   onCancel: () => unknown;
 }
 
 export default function UserCreate({ open, onOk, onCancel }: IUserCreateProps) {
   const [form] = Form.useForm<IUserModel>();
-  const { loading, runAsync: createUser } = useRequest(
-    (data: IUserCreateData) => fetcher.post('/user/create', data),
-    {
-      manual: true,
-    },
+
+  const { isMutating, trigger: createUser } = useSWRMutation<IUserCreateData, IUser>(
+    '/user/create',
+    fetcher.post,
   );
+
   const message = useMessage();
 
   const onFinish = useCallback(async () => {
     const userModel = form.getFieldsValue();
     try {
-      const { data } = await createUser({
+      await createUser({
         name: userModel.name,
         email: userModel.email,
         password: userModel.password,
         confirm_password: userModel.confirm_password,
         avatar: uploadFileToUri(userModel.avatar?.[0]),
       });
-      onOk(data);
+      onOk();
       message.success('创建成功');
     } catch (err) {
       message.error(get(err, 'response.data.message', '创建失败'));
@@ -67,14 +67,14 @@ export default function UserCreate({ open, onOk, onCancel }: IUserCreateProps) {
       open={open}
       onOk={form.submit}
       onCancel={onCancel}
-      closable={!loading}
+      closable={!isMutating}
       maskClosable={false}
       keyboard={false}
       okButtonProps={{
-        loading,
+        loading: isMutating,
       }}
       cancelButtonProps={{
-        loading,
+        loading: isMutating,
       }}
     >
       <Form

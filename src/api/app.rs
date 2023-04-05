@@ -1,4 +1,7 @@
-use crate::{core::app, errors::Result};
+use crate::{
+  core::app::{self, SortAppData},
+  errors::Result,
+};
 
 use actix_identity::Identity;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
@@ -37,6 +40,19 @@ async fn update(
   let updated_app = app::update_app(&db, operator_id, &data).await?;
 
   Ok(HttpResponse::Ok().json(updated_app))
+}
+
+#[put("/sort")]
+async fn sort(
+  identity: Identity,
+  db: web::Data<DbConn>,
+  data: web::Json<Vec<SortAppData>>,
+) -> Result<impl Responder> {
+  let operator_id = identity.id().map(|id| id.parse::<i64>())??;
+
+  app::sort_app(&db, operator_id, &data).await?;
+
+  Ok(HttpResponse::Ok())
 }
 
 #[delete("/delete/{app_id}")]

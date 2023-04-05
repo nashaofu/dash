@@ -1,51 +1,110 @@
-import {
-  Button, Card, Space, Table, TableColumnsType,
-} from 'antd';
 import { useCallback, useMemo, useState } from 'react';
-import { useRequest, useBoolean } from 'ahooks';
 import { PlusOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
+import {
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
+import { restrictToWindowEdges } from '@dnd-kit/modifiers';
+import { Spin } from 'antd';
+import useSWRMutation from '@/hooks/useSWRMutation';
+import useBoolean from '@/hooks/useBoolean';
 import AppEdit, { IAppEditData } from '@/components/AppEdit';
-import styles from './index.module.less';
 import fetcher from '@/utils/fetcher';
 import { IApp } from '@/types/app';
 import useModal from '@/hooks/useModal';
 import useMessage from '@/hooks/useMessage';
-import AppIcon from '@/components/AppIcon';
+import EditableApp from './components/EditableApp';
+import styles from './index.module.less';
+import useApps from '@/store/apps';
+
+type ISortAppData = Array<{ id: string }>;
 
 export default function Apps() {
   const {
     data: apps = [],
-    loading: fetchAllAppLoading,
-    refresh,
-  } = useRequest(() => fetcher.get<unknown, IApp[]>('/app/all'));
+    isLoading: fetchAppsLoading,
+    mutate: mutateApps,
+  } = useApps();
 
   const modal = useModal();
   const message = useMessage();
+  const pointerSensor = useSensor(PointerSensor);
+  const keyboardSensor = useSensor(KeyboardSensor, {
+    coordinateGetter: sortableKeyboardCoordinates,
+  });
+  const sensors = useSensors(pointerSensor, keyboardSensor);
+
+  const appIds = useMemo(() => apps.map((item) => item.id), [apps]);
 
   const [isOpenAppEdit, isOpenAppEditActions] = useBoolean(false);
   const [currentApp, setCurrentApp] = useState<IApp | null>(null);
 
-  const { runAsync: createApp, loading: createLoading } = useRequest(
-    (data: IAppEditData) => fetcher.post('/app/create', data),
+  const { trigger: sortApp } = useSWRMutation<ISortAppData>(
+    '/app/sort',
+    fetcher.put,
     {
-      manual: true,
-      onFinally: () => refresh(),
+      onSuccess: () => mutateApps(),
     },
   );
-  const { runAsync: deleteApp } = useRequest(
-    (id: string) => fetcher.delete(`/app/delete/${id}`),
+
+  const { isMutating: createAppLoading, trigger: createApp } = useSWRMutation<
+  IAppEditData,
+  IApp
+  >('/app/create', fetcher.post, {
+    onSuccess: (app) => mutateApps([...apps, app]),
+  });
+
+  const { trigger: deleteApp } = useSWRMutation<string, string>(
+    '/app/delete',
+    async (url, id) => {
+      await fetcher.delete(`${url}/${id}`);
+      return id;
+    },
     {
-      manual: true,
-      onFinally: () => refresh(),
+      onSuccess: (id) => {
+        mutateApps(apps.filter((item) => item.id !== id));
+      },
     },
   );
-  const { runAsync: updateApp, loading: updateAppLoading } = useRequest(
-    (data: IAppEditData & { id: string }) => fetcher.put('/app/update', data),
-    {
-      manual: true,
-      onFinally: () => refresh(),
+
+  const { trigger: updateApp, isMutating: updateAppLoading } = useSWRMutation<
+  IAppEditData & { id: string },
+  IApp
+  >('/app/update', fetcher.put, {
+    onSuccess: (app) => {
+      const index = apps.findIndex((item) => item.id === app.id);
+      if (index === -1) {
+        return;
+      }
+      const newApps = [...apps];
+      newApps[index] = app;
+      mutateApps(newApps);
     },
+  });
+
+  const onDragEnd = useCallback(
+    ({ active, over }: DragEndEvent) => {
+      if (!over || active.id === over.id) {
+        return;
+      }
+
+      const oldIndex = appIds.indexOf(active.id as string);
+      const newIndex = appIds.indexOf(over.id as string);
+      const ids = arrayMove(appIds, oldIndex, newIndex);
+      sortApp(ids.map((id) => ({ id })));
+      mutateApps(arrayMove(apps, oldIndex, newIndex), { revalidate: false });
+    },
+    [appIds, apps, mutateApps, sortApp],
   );
 
   const onEdit = useCallback(
@@ -94,96 +153,48 @@ export default function Apps() {
     setCurrentApp(null);
   }, [isOpenAppEditActions]);
 
-  const columns: TableColumnsType<IApp> = useMemo(
-    () => [
-      {
-        title: '应用 URL',
-        dataIndex: 'url',
-        key: 'url',
-        render: (_, record) => <div className={styles.url}>{record.name}</div>,
-      },
-      {
-        title: '应用名称',
-        dataIndex: 'name',
-        key: 'name',
-        width: 230,
-      },
-      {
-        title: '应用描述',
-        dataIndex: 'description',
-        key: 'description',
-        render: (_, record) => (
-          <div className={styles.description}>{record.description || '-'}</div>
-        ),
-      },
-      {
-        title: '应用图标',
-        dataIndex: 'icon',
-        key: 'icon',
-        width: 90,
-        render: (_, record) => <AppIcon app={record} />,
-      },
-      {
-        title: '创建时间',
-        key: 'created_at',
-        width: 170,
-        ellipsis: true,
-        render: (_, record) => dayjs(record.created_at).format('YYYY-MM-DD HH:mm:ss'),
-      },
-      {
-        title: '操作',
-        key: 'operation',
-        fixed: 'right',
-        width: 120,
-        render: (_, record) => (
-          <Space.Compact size="small" block>
-            <Button type="link" onClick={() => onEdit(record)}>
-              编辑
-            </Button>
-            <Button type="link" onClick={() => onDelete(record)}>
-              删除
-            </Button>
-          </Space.Compact>
-        ),
-      },
-    ],
-    [onEdit, onDelete],
-  );
-
   return (
-    <div className={styles.apps}>
-      <Card
-        title="应用管理"
-        className={styles.card}
-        extra={(
-          <Button
-            icon={<PlusOutlined />}
-            loading={fetchAllAppLoading}
-            onClick={isOpenAppEditActions.setTrue}
-            title="添加应用"
-          />
-        )}
-      >
-        <Table
-          columns={columns}
-          dataSource={apps}
-          rowKey="id"
-          loading={fetchAllAppLoading}
-          pagination={false}
-          scroll={{
-            scrollToFirstRowOnChange: true,
-            x: true,
-            y: 'calc(100vh - 270px)',
-          }}
-        />
-      </Card>
+    <DndContext
+      sensors={sensors}
+      modifiers={[restrictToWindowEdges]}
+      collisionDetection={closestCenter}
+      onDragEnd={onDragEnd}
+    >
+      <Spin spinning={fetchAppsLoading}>
+        <div className={styles.apps}>
+          <div className={styles.container}>
+            <SortableContext items={appIds}>
+              {apps.map((item) => (
+                <div key={item.id} className={styles.app}>
+                  <EditableApp
+                    id={item.id}
+                    app={item}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
+                </div>
+              ))}
+              <div className={styles.add}>
+                <div
+                  className={styles.addBtn}
+                  onClick={isOpenAppEditActions.setTrue}
+                  role="none"
+                >
+                  <PlusOutlined size={26} />
+                  <span>添加应用</span>
+                </div>
+              </div>
+            </SortableContext>
+          </div>
+        </div>
+      </Spin>
       <AppEdit
         open={isOpenAppEdit}
         app={currentApp}
-        loading={createLoading || updateAppLoading}
+        loading={createAppLoading || updateAppLoading}
         onOk={onEditOk}
         onCancel={onEditCancel}
       />
-    </div>
+    </DndContext>
   );
 }

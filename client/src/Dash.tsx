@@ -1,26 +1,50 @@
-import { Suspense } from 'react';
+import {
+  Suspense, useEffect, useRef, useState,
+} from 'react';
 import { RouterProvider } from 'react-router-dom';
 import {
   ConfigProvider, theme, Spin, App,
 } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import light from '@/assets/wallpaper/light.jpg';
+import wallpaper from '@/assets/wallpaper.jpeg';
 import router from './router';
 import { uriToUrl } from './utils/file';
-import useSetting from './store/setting';
-import { ISettingTheme } from './types/setting';
+import useUser from './store/user';
+import { ISettingTheme } from './types/user';
 import styles from './dash.module.less';
 
 export default function Dash() {
-  const { data: setting, loading } = useSetting();
+  const { data: user, isLoading } = useUser();
+  const [url, setUrl] = useState<string>();
+
+  const setting = user?.setting;
   const bgUrl = uriToUrl(setting?.bg_image);
+  const urlRef = useRef(bgUrl);
+  urlRef.current = bgUrl;
+
+  useEffect(() => {
+    if (!bgUrl) {
+      setUrl(bgUrl);
+      return;
+    }
+
+    const image = new Image();
+    image.addEventListener('load', () => {
+      // 保证加载最新的图片
+      if (bgUrl !== urlRef.current) {
+        return;
+      }
+      setUrl(bgUrl);
+    });
+    image.src = bgUrl;
+  }, [bgUrl]);
 
   return (
     <ConfigProvider
       locale={zhCN}
       theme={{
         algorithm:
-          setting?.theme === ISettingTheme.dark
+          setting?.theme === ISettingTheme.Dark
             ? theme.darkAlgorithm
             : theme.defaultAlgorithm,
       }}
@@ -29,21 +53,21 @@ export default function Dash() {
         <div
           className={styles.dash}
           style={{
-            backgroundImage: `url("${bgUrl || light}")`,
+            backgroundImage: `url("${url || wallpaper}")`,
           }}
         >
           <div
             className={styles.backdrop}
             style={{
-              backdropFilter: `blur(${setting?.bg_blur ?? 2}px)`,
+              backdropFilter: setting?.bg_blur
+                ? `blur(${setting?.bg_blur}px)`
+                : 'none',
             }}
           />
-          <Spin spinning={loading}>
-            {!loading && (
-              <Suspense>
-                <RouterProvider router={router} />
-              </Suspense>
-            )}
+          <Spin spinning={isLoading}>
+            <Suspense fallback={<Spin spinning />}>
+              <RouterProvider router={router} />
+            </Suspense>
           </Spin>
         </div>
       </App>
