@@ -19,7 +19,7 @@ interface ISettingsModel extends Pick<ISetting, 'theme' | 'bg_blur'> {
 }
 
 interface ISettingsUpdateData extends Omit<ISettingsModel, 'bg_image'> {
-  bg_image: string;
+  bg_image?: string;
 }
 
 export default function Settings() {
@@ -35,12 +35,21 @@ export default function Settings() {
   const [isEditable, isEditableActions] = useBoolean(false);
   const message = useMessage();
 
-  const { isMutating: updateSettingLoading, trigger: updateSetting } = useSWRMutation<ISettingsUpdateData>(
+  const { isMutating: updateSettingLoading, trigger: updateSetting } = useSWRMutation<
+  ISettingsUpdateData,
+  ISettingsUpdateData
+  >(
     '/setting/update',
-    fetcher.put,
+    async (url, data) => {
+      await fetcher.put(url, data);
+      return data;
+    },
     {
-      onSuccess: () => {
-        mutateUser();
+      onSuccess: (data) => {
+        if (!user) {
+          return;
+        }
+        mutateUser({ ...user, setting: data });
       },
     },
   );

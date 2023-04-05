@@ -13,7 +13,7 @@ import styles from './index.module.less';
 interface IMyProfileProps {
   user?: IUser;
   loading?: boolean;
-  onUserUpdate: () => unknown;
+  onUserUpdate: (user: IUser) => unknown;
 }
 
 export default function MyProfile({
@@ -26,10 +26,13 @@ export default function MyProfile({
   const [isOpenUserUpdate, isOpenUserUpdateActions] = useBoolean(false);
   const [isOpenPasswordUpdate, isOpenPasswordUpdateActions] = useBoolean(false);
 
-  const onUserUpdateOk = useCallback(() => {
-    isOpenUserUpdateActions.setFalse();
-    onUserUpdate();
-  }, [isOpenUserUpdateActions, onUserUpdate]);
+  const onUserUpdateOk = useCallback(
+    (newUser: IUser) => {
+      isOpenUserUpdateActions.setFalse();
+      onUserUpdate(newUser);
+    },
+    [isOpenUserUpdateActions, onUserUpdate],
+  );
 
   const columns: TableColumnsType<IUser> = useMemo(
     () => [

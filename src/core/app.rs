@@ -59,6 +59,7 @@ pub async fn create_app(
 
 #[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct UpdateAppData {
+  #[serde(deserialize_with = "str_to_i64")]
   id: i64,
   #[validate(
     length(min = 1, max = 255, message = "应用 URL 长度不得超过 255 个字符"),

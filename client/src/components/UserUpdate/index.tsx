@@ -30,28 +30,31 @@ export default function UserUpdate({
 }: IUserUpdateProps) {
   const [form] = Form.useForm<IUserModel>();
 
-  const { isMutating, trigger: updateUser } = useSWRMutation<IUserUpdateData>(
-    '/user/update',
-    fetcher.put,
-  );
+  const { isMutating, trigger: updateUser } = useSWRMutation<
+  IUserUpdateData,
+  IUser
+  >('/user/update', fetcher.put, {
+    onSuccess: (data) => {
+      onOk(data);
+    },
+  });
 
   const message = useMessage();
 
   const onFinish = useCallback(async () => {
     const userModel = form.getFieldsValue();
     try {
-      const data = await updateUser({
+      await updateUser({
         name: userModel.name,
         email: userModel.email,
         avatar: uploadFileToUri(userModel.avatar?.[0]),
       });
-      onOk(data);
       message.success('账号设置成功');
     } catch (err) {
       message.error('账号设置失败');
       throw err;
     }
-  }, [form, message, updateUser, onOk]);
+  }, [form, message, updateUser]);
 
   useEffect(() => {
     if (!open) {

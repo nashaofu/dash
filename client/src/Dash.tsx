@@ -1,10 +1,12 @@
-import { Suspense } from 'react';
+import {
+  Suspense, useEffect, useRef, useState,
+} from 'react';
 import { RouterProvider } from 'react-router-dom';
 import {
   ConfigProvider, theme, Spin, App,
 } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import light from '@/assets/wallpaper/light.jpg';
+import wallpaper from '@/assets/wallpaper.jpeg';
 import router from './router';
 import { uriToUrl } from './utils/file';
 import useUser from './store/user';
@@ -13,8 +15,29 @@ import styles from './dash.module.less';
 
 export default function Dash() {
   const { data: user, isLoading } = useUser();
+  const [url, setUrl] = useState<string>();
+
   const setting = user?.setting;
   const bgUrl = uriToUrl(setting?.bg_image);
+  const urlRef = useRef(bgUrl);
+  urlRef.current = bgUrl;
+
+  useEffect(() => {
+    if (!bgUrl) {
+      setUrl(bgUrl);
+      return;
+    }
+
+    const image = new Image();
+    image.addEventListener('load', () => {
+      // 保证加载最新的图片
+      if (bgUrl !== urlRef.current) {
+        return;
+      }
+      setUrl(bgUrl);
+    });
+    image.src = bgUrl;
+  }, [bgUrl]);
 
   return (
     <ConfigProvider
@@ -30,7 +53,7 @@ export default function Dash() {
         <div
           className={styles.dash}
           style={{
-            backgroundImage: `url("${bgUrl || light}")`,
+            backgroundImage: `url("${url || wallpaper}")`,
           }}
         >
           <div
@@ -42,11 +65,9 @@ export default function Dash() {
             }}
           />
           <Spin spinning={isLoading}>
-            {!isLoading && (
-              <Suspense fallback={<Spin spinning />}>
-                <RouterProvider router={router} />
-              </Suspense>
-            )}
+            <Suspense fallback={<Spin spinning />}>
+              <RouterProvider router={router} />
+            </Suspense>
           </Spin>
         </div>
       </App>

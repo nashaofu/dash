@@ -13,12 +13,13 @@ import UserManage from './components/UserManage';
 import styles from './index.module.less';
 import useMessage from '@/hooks/useMessage';
 import useUser from '@/store/user';
+import { IUser } from '@/types/user';
 
 export default function Users() {
   const navigate = useNavigate();
   const {
     data: user,
-    isValidating: fetchUserInfoLoading,
+    isLoading: fetchUserInfoLoading,
     mutate: mutateUser,
   } = useUser();
 
@@ -28,11 +29,12 @@ export default function Users() {
 
   const message = useMessage();
 
-  const { isMutating: logoutLoading, trigger: logout } = useSWRMutation(
+  const { isMutating: logoutLoading, trigger: logout } = useSWRMutation<void>(
     '/auth/logout',
     fetcher.post,
     {
       onSuccess: () => {
+        mutateUser(undefined, { revalidate: false });
         navigate('/login');
       },
       onError: () => {
@@ -43,10 +45,13 @@ export default function Users() {
 
   const loading = fetchUserInfoLoading || logoutLoading;
 
-  const onUserUpdate = useCallback(() => {
-    mutateUser();
-    userManageRef.current?.fetchUserList();
-  }, [mutateUser]);
+  const onUserUpdate = useCallback(
+    (newUser: IUser) => {
+      mutateUser(newUser);
+      userManageRef.current?.fetchUserList();
+    },
+    [mutateUser],
+  );
 
   const tabContent = {
     MyProfile: (
@@ -106,7 +111,7 @@ export default function Users() {
               loading={loading}
               icon={<LogoutOutlined />}
               title="退出登录"
-              onClick={logout}
+              onClick={() => logout()}
             />
           </Space.Compact>
         )}

@@ -49,30 +49,47 @@ export default function Apps() {
   const [isOpenAppEdit, isOpenAppEditActions] = useBoolean(false);
   const [currentApp, setCurrentApp] = useState<IApp | null>(null);
 
-  const { isMutating: sortAppLoading, trigger: sortApp } = useSWRMutation<ISortAppData>('/app/sort', fetcher.put, {
-    onSuccess: () => mutateApps(),
-  });
-
-  const { isMutating: createAppLoading, trigger: createApp } = useSWRMutation<IAppEditData>(
-    '/app/create',
-    fetcher.post,
+  const { trigger: sortApp } = useSWRMutation<ISortAppData>(
+    '/app/sort',
+    fetcher.put,
     {
       onSuccess: () => mutateApps(),
     },
   );
 
-  const { trigger: deleteApp } = useSWRMutation<string>(
+  const { isMutating: createAppLoading, trigger: createApp } = useSWRMutation<
+  IAppEditData,
+  IApp
+  >('/app/create', fetcher.post, {
+    onSuccess: (app) => mutateApps([...apps, app]),
+  });
+
+  const { trigger: deleteApp } = useSWRMutation<string, string>(
     '/app/delete',
-    (url, id) => fetcher.delete(`${url}/${id}`),
+    async (url, id) => {
+      await fetcher.delete(`${url}/${id}`);
+      return id;
+    },
     {
-      onSuccess: () => mutateApps(),
+      onSuccess: (id) => {
+        mutateApps(apps.filter((item) => item.id !== id));
+      },
     },
   );
 
   const { trigger: updateApp, isMutating: updateAppLoading } = useSWRMutation<
-  IAppEditData & { id: string }
+  IAppEditData & { id: string },
+  IApp
   >('/app/update', fetcher.put, {
-    onSuccess: () => mutateApps(),
+    onSuccess: (app) => {
+      const index = apps.findIndex((item) => item.id === app.id);
+      if (index === -1) {
+        return;
+      }
+      const newApps = [...apps];
+      newApps[index] = app;
+      mutateApps(newApps);
+    },
   });
 
   const onDragEnd = useCallback(
@@ -83,9 +100,9 @@ export default function Apps() {
 
       const oldIndex = appIds.indexOf(active.id as string);
       const newIndex = appIds.indexOf(over.id as string);
-      mutateApps(arrayMove(apps, oldIndex, newIndex));
       const ids = arrayMove(appIds, oldIndex, newIndex);
       sortApp(ids.map((id) => ({ id })));
+      mutateApps(arrayMove(apps, oldIndex, newIndex), { revalidate: false });
     },
     [appIds, apps, mutateApps, sortApp],
   );
@@ -143,7 +160,7 @@ export default function Apps() {
       collisionDetection={closestCenter}
       onDragEnd={onDragEnd}
     >
-      <Spin spinning={fetchAppsLoading || sortAppLoading}>
+      <Spin spinning={fetchAppsLoading}>
         <div className={styles.apps}>
           <div className={styles.container}>
             <SortableContext items={appIds}>

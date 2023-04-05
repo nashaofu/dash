@@ -59,7 +59,11 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
     (url, id) => fetcher.delete(`${url}/${id}`),
     {
       onSuccess: () => {
-        setPage(1);
+        if (page !== 1) {
+          setPage(1);
+        } else {
+          mutateUserList();
+        }
       },
       onError: (err) => {
         message.error(get(err, 'response.data.message', '删除失败'));

@@ -20,7 +20,7 @@ interface IUserCreateData extends Omit<IUserModel, 'avatar'> {
 
 export interface IUserCreateProps {
   open: boolean;
-  onOk: (user: IUser) => unknown;
+  onOk: () => unknown;
   onCancel: () => unknown;
 }
 
@@ -37,14 +37,14 @@ export default function UserCreate({ open, onOk, onCancel }: IUserCreateProps) {
   const onFinish = useCallback(async () => {
     const userModel = form.getFieldsValue();
     try {
-      const data = await createUser({
+      await createUser({
         name: userModel.name,
         email: userModel.email,
         password: userModel.password,
         confirm_password: userModel.confirm_password,
         avatar: uploadFileToUri(userModel.avatar?.[0]),
       });
-      onOk(data);
+      onOk();
       message.success('创建成功');
     } catch (err) {
       message.error(get(err, 'response.data.message', '创建失败'));

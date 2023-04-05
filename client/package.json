@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "rspack serve",
+    "watch": "tsc --watch",
     "build": "npm run clean && npm run lint && tsc && rspack build",
     "clean": "rimraf dist",
     "lint": "eslint . --ext .js,.ts,.jsx,.tsx --fix"

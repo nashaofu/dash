@@ -1,7 +1,7 @@
 import {
   Form, Input, Button, Spin, Checkbox, theme,
 } from 'antd';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSWRMutation from '@/hooks/useSWRMutation';
 import fetcher from '@/utils/fetcher';
@@ -17,7 +17,8 @@ interface ILoginData {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { mutate: mutateUser } = useUser();
+  const { data: user, mutate: mutateUser } = useUser();
+
   const {
     isMutating,
     error,
@@ -25,7 +26,6 @@ export default function Login() {
   } = useSWRMutation<ILoginData, IUser>('/auth/login', fetcher.post, {
     onSuccess: (data) => {
       mutateUser(data);
-      navigate('/', { replace: true });
     },
   });
 
@@ -44,6 +44,13 @@ export default function Login() {
     }
     login(model);
   }, [form, login, setLoginStorage]);
+
+  useEffect(() => {
+    if (user?.id) {
+      navigate('/', { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
     <div
