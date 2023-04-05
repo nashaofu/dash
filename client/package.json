@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "rspack serve",
     "watch": "tsc --watch",
-    "build": "npm run clean && npm run lint && tsc && rspack build",
+    "build": "npm run clean && npm run lint && tsc && rspack build --node-env production",
     "clean": "rimraf dist",
     "lint": "eslint . --ext .js,.ts,.jsx,.tsx --fix"
   },
