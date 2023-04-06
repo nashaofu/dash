@@ -4,7 +4,7 @@ import {
 import { Button, Card, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { LogoutOutlined, PlusOutlined } from '@ant-design/icons';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useBoolean from '@/hooks/useBoolean';
 import fetcher from '@/utils/fetcher';
 import UserCreate from '@/components/UserCreate';
@@ -12,7 +12,7 @@ import MyProfile from './components/MyProfile';
 import UserManage from './components/UserManage';
 import styles from './index.module.less';
 import useMessage from '@/hooks/useMessage';
-import useUser from '@/store/user';
+import useUser from '@/queries/user';
 import { IUser } from '@/types/user';
 
 export default function Users() {
@@ -20,8 +20,11 @@ export default function Users() {
   const {
     data: user,
     isLoading: fetchUserInfoLoading,
-    mutate: mutateUser,
+    refetch: refetchUser,
+    setQueryData,
   } = useUser();
+
+  const queryClient = useQueryClient();
 
   const [isOpenUserCreate, isOpenUserCreateActions] = useBoolean(false);
 
@@ -29,28 +32,26 @@ export default function Users() {
 
   const message = useMessage();
 
-  const { isMutating: logoutLoading, trigger: logout } = useSWRMutation<void>(
-    '/auth/logout',
-    fetcher.post,
-    {
-      onSuccess: () => {
-        mutateUser(undefined, { revalidate: false });
-        navigate('/login');
-      },
-      onError: () => {
-        message.error('退出登录失败');
-      },
+  const { isLoading: logoutLoading, mutate: logout } = useMutation({
+    mutationFn: () => fetcher.post('/auth/logout'),
+    onSuccess: () => {
+      queryClient.clear();
+      navigate('/login');
     },
-  );
+    onError: () => {
+      message.error('退出登录失败');
+    },
+  });
 
   const loading = fetchUserInfoLoading || logoutLoading;
 
   const onUserUpdate = useCallback(
     (newUser: IUser) => {
-      mutateUser(newUser);
+      setQueryData(newUser);
+      refetchUser();
       userManageRef.current?.fetchUserList();
     },
-    [mutateUser],
+    [refetchUser, setQueryData],
   );
 
   const tabContent = {

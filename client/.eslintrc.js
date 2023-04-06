@@ -9,7 +9,12 @@ module.exports = {
     node: true,
     commonjs: true,
   },
-  extends: ["airbnb", "airbnb/hooks", "airbnb-typescript"],
+  extends: [
+    "airbnb",
+    "airbnb/hooks",
+    "airbnb-typescript",
+    "plugin:@tanstack/eslint-plugin-query/recommended",
+  ],
   rules: {
     "max-len": ["error", { code: 120 }],
     "import/extensions": "off",

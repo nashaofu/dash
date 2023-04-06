@@ -3,9 +3,10 @@ import {
 } from 'antd';
 import { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import { useMutation } from '@tanstack/react-query';
+import { get } from 'lodash-es';
 import fetcher from '@/utils/fetcher';
-import useUser from '@/store/user';
+import useUser from '@/queries/user';
 import styles from './index.module.less';
 import { IUser } from '@/types/user';
 import useLocalStorage from '@/hooks/useLocalStorage';
@@ -17,15 +18,17 @@ interface ILoginData {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { data: user, mutate: mutateUser } = useUser();
+  const { data: user, refetch: refetchUser, setQueryData } = useUser();
 
   const {
-    isMutating,
+    isLoading,
     error,
-    trigger: login,
-  } = useSWRMutation<ILoginData, IUser>('/auth/login', fetcher.post, {
+    mutate: login,
+  } = useMutation({
+    mutationFn: (data: ILoginData) => fetcher.post<unknown, IUser>('/auth/login', data),
     onSuccess: (data) => {
-      mutateUser(data);
+      setQueryData(data);
+      refetchUser();
     },
   });
 
@@ -60,7 +63,7 @@ export default function Login() {
         color: token.colorText,
       }}
     >
-      <Spin spinning={isMutating}>
+      <Spin spinning={isLoading}>
         <div className={styles.logo}>
           <div className={styles.logoIcon}>Dash</div>
           <div className={styles.logoText}>我的私有的导航站</div>
@@ -128,7 +131,8 @@ export default function Login() {
               color: token.colorError,
             }}
           >
-            登录失败： 用户名、邮箱或密码错误
+            登录失败：
+            {get(error, 'response.data.message', '用户名、邮箱或密码错误')}
           </div>
         )}
       </Spin>

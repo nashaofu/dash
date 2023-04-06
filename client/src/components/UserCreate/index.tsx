@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
 import { get } from 'lodash-es';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import { useMutation } from '@tanstack/react-query';
 import { IUser } from '@/types/user';
 import fetcher from '@/utils/fetcher';
 import ImageUploader from '../ImageUploader';
@@ -26,31 +26,29 @@ export interface IUserCreateProps {
 
 export default function UserCreate({ open, onOk, onCancel }: IUserCreateProps) {
   const [form] = Form.useForm<IUserModel>();
-
-  const { isMutating, trigger: createUser } = useSWRMutation<IUserCreateData, IUser>(
-    '/user/create',
-    fetcher.post,
-  );
-
   const message = useMessage();
+
+  const { isLoading, mutateAsync: createUser } = useMutation({
+    mutationFn: (data: IUserCreateData) => fetcher.post<unknown, IUser>('/user/create', data),
+    onSuccess: () => {
+      onOk();
+      message.success('创建成功');
+    },
+    onError: (err) => {
+      message.error(get(err, 'response.data.message', '创建失败'));
+    },
+  });
 
   const onFinish = useCallback(async () => {
     const userModel = form.getFieldsValue();
-    try {
-      await createUser({
-        name: userModel.name,
-        email: userModel.email,
-        password: userModel.password,
-        confirm_password: userModel.confirm_password,
-        avatar: uploadFileToUri(userModel.avatar?.[0]),
-      });
-      onOk();
-      message.success('创建成功');
-    } catch (err) {
-      message.error(get(err, 'response.data.message', '创建失败'));
-      throw err;
-    }
-  }, [form, message, createUser, onOk]);
+    await createUser({
+      name: userModel.name,
+      email: userModel.email,
+      password: userModel.password,
+      confirm_password: userModel.confirm_password,
+      avatar: uploadFileToUri(userModel.avatar?.[0]),
+    });
+  }, [form, createUser]);
 
   useEffect(() => {
     if (!open) {
@@ -67,14 +65,14 @@ export default function UserCreate({ open, onOk, onCancel }: IUserCreateProps) {
       open={open}
       onOk={form.submit}
       onCancel={onCancel}
-      closable={!isMutating}
+      closable={!isLoading}
       maskClosable={false}
       keyboard={false}
       okButtonProps={{
-        loading: isMutating,
+        loading: isLoading,
       }}
       cancelButtonProps={{
-        loading: isMutating,
+        loading: isLoading,
       }}
     >
       <Form

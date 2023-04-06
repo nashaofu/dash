@@ -9,9 +9,8 @@ import {
   Avatar, Button, Space, Table, TableColumnsType, Tag,
 } from 'antd';
 import dayjs from 'dayjs';
-import useSWR from 'swr';
 import { get } from 'lodash-es';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import fetcher from '@/utils/fetcher';
 import { IUser } from '@/types/user';
 import { uriToUrl } from '@/utils/file';
@@ -19,7 +18,7 @@ import styles from './index.module.less';
 import useModal from '@/hooks/useModal';
 import useMessage from '@/hooks/useMessage';
 
-interface IFetchUserListRes {
+interface IFetchUserListResp {
   items: IUser[];
   total: number;
 }
@@ -34,15 +33,18 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
   const [size, setSize] = useState(10);
   const {
     data,
-    isValidating: fetchUserListLoading,
-    mutate: mutateUserList,
-  } = useSWR(
-    ['/user/list', { page, size }],
-    ([url, params]) => fetcher.get<unknown, IFetchUserListRes>(url, { params }),
-    {
-      revalidateOnFocus: false,
-    },
-  );
+    isFetching: fetchUserListLoading,
+    refetch: refetchUserList,
+  } = useQuery({
+    queryKey: ['/user/list', page, size],
+    queryFn: () => fetcher.get<unknown, IFetchUserListResp>('/user/list', {
+      params: {
+        page,
+        size,
+      },
+    }),
+    refetchOnWindowFocus: false,
+  });
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
@@ -51,25 +53,22 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
   const message = useMessage();
 
   useImperativeHandle(ref, () => ({
-    fetchUserList: mutateUserList,
+    fetchUserList: refetchUserList,
   }));
 
-  const { trigger: deleteUser } = useSWRMutation<string>(
-    '/user/delete',
-    (url, id) => fetcher.delete(`${url}/${id}`),
-    {
-      onSuccess: () => {
-        if (page !== 1) {
-          setPage(1);
-        } else {
-          mutateUserList();
-        }
-      },
-      onError: (err) => {
-        message.error(get(err, 'response.data.message', '删除失败'));
-      },
+  const { mutateAsync: deleteUser } = useMutation({
+    mutationFn: (id: string) => fetcher.delete(`/user/delete/${id}`),
+    onSuccess: () => {
+      if (page !== 1) {
+        setPage(1);
+      } else {
+        refetchUserList();
+      }
     },
-  );
+    onError: (err) => {
+      message.error(get(err, 'response.data.message', '删除失败'));
+    },
+  });
 
   const onDelete = useCallback(
     (record: IUser) => {
