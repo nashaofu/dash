@@ -1,13 +1,13 @@
 import { Spin } from 'antd';
 import App from '@/components/App';
 import styles from './index.module.less';
-import useApps from '@/store/apps';
+import useApps from '@/queries/apps';
 
 export default function Home() {
   const { data: apps = [], isLoading } = useApps();
 
   return (
-    <Spin spinning={isLoading}>
+    <Spin spinning={isLoading} size="large">
       <div className={styles.home}>
         <div className={styles.container}>
           {apps.map((item) => (

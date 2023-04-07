@@ -4,22 +4,18 @@ import {
 import { useCallback, useEffect } from 'react';
 import { EditOutlined, SaveOutlined } from '@ant-design/icons';
 import { get } from 'lodash-es';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import { useMutation } from '@tanstack/react-query';
 import useBoolean from '@/hooks/useBoolean';
 import fetcher from '@/utils/fetcher';
 import { IUploadFile, uploadFileToUri, uriToUploadFile } from '@/utils/file';
 import ImageUploader from '@/components/ImageUploader';
 import { ISetting, ISettingTheme } from '@/types/user';
 import useMessage from '@/hooks/useMessage';
-import useUser from '@/store/user';
+import useUser from '@/queries/user';
 import styles from './index.module.less';
 
 interface ISettingsModel extends Pick<ISetting, 'theme' | 'bg_blur'> {
   bg_image: IUploadFile[];
-}
-
-interface ISettingsUpdateData extends Omit<ISettingsModel, 'bg_image'> {
-  bg_image?: string;
 }
 
 export default function Settings() {
@@ -27,7 +23,8 @@ export default function Settings() {
   const {
     data: user,
     isLoading: fetchUserLoading,
-    mutate: mutateUser,
+    setQueryData,
+    invalidateQueries,
   } = useUser();
 
   const setting = user?.setting;
@@ -35,24 +32,29 @@ export default function Settings() {
   const [isEditable, isEditableActions] = useBoolean(false);
   const message = useMessage();
 
-  const { isMutating: updateSettingLoading, trigger: updateSetting } = useSWRMutation<
-  ISettingsUpdateData,
-  ISettingsUpdateData
-  >(
-    '/setting/update',
-    async (url, data) => {
-      await fetcher.put(url, data);
-      return data;
-    },
-    {
-      onSuccess: (data) => {
-        if (!user) {
-          return;
+  const { isLoading: updateSettingLoading, mutateAsync: updateSetting } = useMutation({
+    mutationFn: (data: ISetting) => fetcher.put<ISetting>('/setting/update', data),
+    onSuccess: (_, newSetting) => {
+      message.success('保存成功');
+      setQueryData((oldUser) => {
+        if (!oldUser) {
+          return undefined;
         }
-        mutateUser({ ...user, setting: data });
-      },
+
+        return {
+          ...oldUser,
+          setting: newSetting,
+        };
+      });
+      isEditableActions.setFalse();
     },
-  );
+    onError: (err) => {
+      message.error(get(err, 'response.data.message', '保存失败'));
+    },
+    onSettled: () => {
+      invalidateQueries();
+    },
+  });
 
   const loading = fetchUserLoading || updateSettingLoading;
 
@@ -60,19 +62,12 @@ export default function Settings() {
     const settingsModel = form.getFieldsValue();
     const bgImage = uploadFileToUri(settingsModel.bg_image?.[0]);
 
-    try {
-      await updateSetting({
-        theme: settingsModel.theme,
-        bg_image: bgImage,
-        bg_blur: settingsModel.bg_blur,
-      });
-      message.success('保存成功');
-      isEditableActions.setFalse();
-    } catch (err) {
-      message.error(get(err, 'response.data.message', '保存失败'));
-      throw err;
-    }
-  }, [form, message, updateSetting, isEditableActions]);
+    await updateSetting({
+      theme: settingsModel.theme,
+      bg_image: bgImage,
+      bg_blur: settingsModel.bg_blur,
+    });
+  }, [form, updateSetting]);
 
   useEffect(() => {
     if (!setting) {

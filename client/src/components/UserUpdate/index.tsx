@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import { useMutation } from '@tanstack/react-query';
+import { get } from 'lodash-es';
 import { IUser } from '@/types/user';
 import fetcher from '@/utils/fetcher';
 import ImageUploader from '../ImageUploader';
@@ -29,32 +30,27 @@ export default function UserUpdate({
   onCancel,
 }: IUserUpdateProps) {
   const [form] = Form.useForm<IUserModel>();
+  const message = useMessage();
 
-  const { isMutating, trigger: updateUser } = useSWRMutation<
-  IUserUpdateData,
-  IUser
-  >('/user/update', fetcher.put, {
+  const { isLoading, mutateAsync: updateUser } = useMutation({
+    mutationFn: (data: IUserUpdateData) => fetcher.put<unknown, IUser>('/user/update', data),
     onSuccess: (data) => {
       onOk(data);
+      message.success('账号设置成功');
+    },
+    onError: (err) => {
+      message.error(get(err, 'response.data.message', '账号设置失败'));
     },
   });
 
-  const message = useMessage();
-
   const onFinish = useCallback(async () => {
     const userModel = form.getFieldsValue();
-    try {
-      await updateUser({
-        name: userModel.name,
-        email: userModel.email,
-        avatar: uploadFileToUri(userModel.avatar?.[0]),
-      });
-      message.success('账号设置成功');
-    } catch (err) {
-      message.error('账号设置失败');
-      throw err;
-    }
-  }, [form, message, updateUser]);
+    await updateUser({
+      name: userModel.name,
+      email: userModel.email,
+      avatar: uploadFileToUri(userModel.avatar?.[0]),
+    });
+  }, [form, updateUser]);
 
   useEffect(() => {
     if (!open) {
@@ -79,14 +75,14 @@ export default function UserUpdate({
       open={open}
       onOk={form.submit}
       onCancel={onCancel}
-      closable={!isMutating}
+      closable={!isLoading}
       maskClosable={false}
       keyboard={false}
       okButtonProps={{
-        loading: isMutating,
+        loading: isLoading,
       }}
       cancelButtonProps={{
-        loading: isMutating,
+        loading: isLoading,
       }}
     >
       <Form

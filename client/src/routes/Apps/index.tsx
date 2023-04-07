@@ -3,20 +3,17 @@ import { PlusOutlined } from '@ant-design/icons';
 import {
   DndContext,
   DragEndEvent,
-  KeyboardSensor,
   PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
   closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-} from '@dnd-kit/sortable';
+import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { Spin } from 'antd';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import { useMutation } from '@tanstack/react-query';
 import useBoolean from '@/hooks/useBoolean';
 import AppEdit, { IAppEditData } from '@/components/AppEdit';
 import fetcher from '@/utils/fetcher';
@@ -25,70 +22,79 @@ import useModal from '@/hooks/useModal';
 import useMessage from '@/hooks/useMessage';
 import EditableApp from './components/EditableApp';
 import styles from './index.module.less';
-import useApps from '@/store/apps';
+import useApps from '@/queries/apps';
 
-type ISortAppData = Array<{ id: string }>;
+type ICreateAppData = IAppEditData;
+type IUpdateAppData = IAppEditData & { id: string };
 
 export default function Apps() {
   const {
     data: apps = [],
-    isLoading: fetchAppsLoading,
-    mutate: mutateApps,
-  } = useApps();
+    isInitialLoading: fetchAppsLoading,
+    refetch: refetchApps,
+    cancelQuery,
+    getQueryData,
+    setQueryData,
+  } = useApps({
+    refetchOnWindowFocus: false,
+  });
 
   const modal = useModal();
   const message = useMessage();
   const pointerSensor = useSensor(PointerSensor);
-  const keyboardSensor = useSensor(KeyboardSensor, {
-    coordinateGetter: sortableKeyboardCoordinates,
-  });
-  const sensors = useSensors(pointerSensor, keyboardSensor);
+  const keyboardSensor = useSensor(KeyboardSensor);
+  const touchSensor = useSensor(TouchSensor);
+  const sensors = useSensors(pointerSensor, touchSensor, keyboardSensor);
 
   const appIds = useMemo(() => apps.map((item) => item.id), [apps]);
 
   const [isOpenAppEdit, isOpenAppEditActions] = useBoolean(false);
   const [currentApp, setCurrentApp] = useState<IApp | null>(null);
 
-  const { trigger: sortApp } = useSWRMutation<ISortAppData>(
-    '/app/sort',
-    fetcher.put,
-    {
-      onSuccess: () => mutateApps(),
+  const { mutate: sortApp } = useMutation({
+    mutationFn: (data: IApp[]) => fetcher.put(
+      '/app/sort',
+      data.map((item) => ({ id: item.id })),
+    ),
+    onMutate: async (newApps) => {
+      await cancelQuery();
+      const oldApps = getQueryData();
+      setQueryData(newApps);
+      return oldApps;
     },
-  );
-
-  const { isMutating: createAppLoading, trigger: createApp } = useSWRMutation<
-  IAppEditData,
-  IApp
-  >('/app/create', fetcher.post, {
-    onSuccess: (app) => mutateApps([...apps, app]),
+    onError: (err, _, oldApps) => setQueryData(oldApps),
+    onSettled: () => refetchApps(),
   });
 
-  const { trigger: deleteApp } = useSWRMutation<string, string>(
-    '/app/delete',
-    async (url, id) => {
-      await fetcher.delete(`${url}/${id}`);
-      return id;
+  const { isLoading: createAppLoading, mutateAsync: createApp } = useMutation({
+    mutationFn: (data: ICreateAppData) => fetcher.post<unknown, IApp>('/app/create', data),
+    onSuccess: (app) => {
+      setQueryData((oldApps = []) => [...oldApps, app]);
+      refetchApps();
     },
-    {
-      onSuccess: (id) => {
-        mutateApps(apps.filter((item) => item.id !== id));
-      },
-    },
-  );
+  });
 
-  const { trigger: updateApp, isMutating: updateAppLoading } = useSWRMutation<
-  IAppEditData & { id: string },
-  IApp
-  >('/app/update', fetcher.put, {
+  const { mutateAsync: deleteApp } = useMutation({
+    mutationFn: (appId: string) => fetcher.delete(`/app/delete/${appId}`),
+    onSuccess: (_, appId) => {
+      setQueryData((oldApps = []) => oldApps.filter((item) => item.id !== appId));
+      refetchApps();
+    },
+  });
+
+  const { mutateAsync: updateApp, isLoading: updateAppLoading } = useMutation({
+    mutationFn: (data: IUpdateAppData) => fetcher.put<unknown, IApp>('/app/update', data),
     onSuccess: (app) => {
       const index = apps.findIndex((item) => item.id === app.id);
       if (index === -1) {
         return;
       }
-      const newApps = [...apps];
-      newApps[index] = app;
-      mutateApps(newApps);
+      setQueryData((oldApps = []) => {
+        const newApps = [...oldApps];
+        newApps[index] = app;
+        return newApps;
+      });
+      refetchApps();
     },
   });
 
@@ -100,11 +106,9 @@ export default function Apps() {
 
       const oldIndex = appIds.indexOf(active.id as string);
       const newIndex = appIds.indexOf(over.id as string);
-      const ids = arrayMove(appIds, oldIndex, newIndex);
-      sortApp(ids.map((id) => ({ id })));
-      mutateApps(arrayMove(apps, oldIndex, newIndex), { revalidate: false });
+      sortApp(arrayMove(apps, oldIndex, newIndex));
     },
-    [appIds, apps, mutateApps, sortApp],
+    [appIds, apps, sortApp],
   );
 
   const onEdit = useCallback(
@@ -160,7 +164,7 @@ export default function Apps() {
       collisionDetection={closestCenter}
       onDragEnd={onDragEnd}
     >
-      <Spin spinning={fetchAppsLoading}>
+      <Spin spinning={fetchAppsLoading} size="large">
         <div className={styles.apps}>
           <div className={styles.container}>
             <SortableContext items={appIds}>

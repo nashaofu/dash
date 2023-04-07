@@ -1,20 +1,16 @@
-import {
-  Suspense, useEffect, useRef, useState,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
-import {
-  ConfigProvider, theme, Spin, App,
-} from 'antd';
+import { ConfigProvider, theme, App } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import wallpaper from '@/assets/wallpaper.jpeg';
 import router from './router';
 import { uriToUrl } from './utils/file';
-import useUser from './store/user';
+import useUser from './queries/user';
 import { ISettingTheme } from './types/user';
 import styles from './dash.module.less';
 
 export default function Dash() {
-  const { data: user, isLoading } = useUser();
+  const { data: user } = useUser();
   const [url, setUrl] = useState<string>();
 
   const setting = user?.setting;
@@ -64,11 +60,7 @@ export default function Dash() {
                 : 'none',
             }}
           />
-          <Spin spinning={isLoading}>
-            <Suspense fallback={<Spin spinning />}>
-              <RouterProvider router={router} />
-            </Suspense>
-          </Spin>
+          <RouterProvider router={router} />
         </div>
       </App>
     </ConfigProvider>
