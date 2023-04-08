@@ -1,7 +1,7 @@
 use crate::errors::AppError;
 
 use actix_web::http::StatusCode;
-use entity::users;
+use entity::{apps, users};
 use lazy_static::lazy_static;
 use regex::Regex;
 use sea_orm::{
@@ -207,6 +207,11 @@ pub async fn delete_user(
     .await?
     .ok_or(AppError::new(StatusCode::NOT_FOUND, 404, "用户不存在"))?
     .delete(db)
+    .await?;
+
+  apps::Entity::delete_many()
+    .filter(apps::Column::OwnerId.eq(user_id))
+    .exec(db)
     .await
     .map_err(Into::into)
 }
