@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import useSWRMutation from 'swr/mutation';
+import { get } from 'lodash-es';
 import { IUser } from '@/types/user';
 import fetcher from '@/utils/fetcher';
 import ImageUploader from '../ImageUploader';
@@ -29,32 +30,30 @@ export default function UserUpdate({
   onCancel,
 }: IUserUpdateProps) {
   const [form] = Form.useForm<IUserModel>();
-
-  const { isMutating, trigger: updateUser } = useSWRMutation<
-  IUserUpdateData,
-  IUser
-  >('/user/update', fetcher.put, {
-    onSuccess: (data) => {
-      onOk(data);
-    },
-  });
-
   const message = useMessage();
 
-  const onFinish = useCallback(async () => {
+  const { isMutating, trigger: updateUser } = useSWRMutation(
+    '/user/update',
+    (url, { arg }: { arg: IUserUpdateData }) => fetcher.put<unknown, IUser>(url, arg),
+    {
+      onSuccess: (data) => {
+        onOk(data);
+        message.success('账号设置成功');
+      },
+      onError: (err) => {
+        message.error(get(err, 'response.data.message', '账号设置失败'));
+      },
+    },
+  );
+
+  const onFinish = useCallback(() => {
     const userModel = form.getFieldsValue();
-    try {
-      await updateUser({
-        name: userModel.name,
-        email: userModel.email,
-        avatar: uploadFileToUri(userModel.avatar?.[0]),
-      });
-      message.success('账号设置成功');
-    } catch (err) {
-      message.error('账号设置失败');
-      throw err;
-    }
-  }, [form, message, updateUser]);
+    updateUser({
+      name: userModel.name,
+      email: userModel.email,
+      avatar: uploadFileToUri(userModel.avatar?.[0]),
+    });
+  }, [form, updateUser]);
 
   useEffect(() => {
     if (!open) {

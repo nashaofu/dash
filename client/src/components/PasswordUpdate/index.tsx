@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import useSWRMutation from 'swr/mutation';
+import { get } from 'lodash-es';
 import fetcher from '@/utils/fetcher';
 import useMessage from '@/hooks/useMessage';
 
@@ -22,25 +23,30 @@ export default function PasswordUpdate({
   onCancel,
 }: IPasswordUpdateProps) {
   const [form] = Form.useForm<IPasswordUpdateModel>();
-  const { isMutating, trigger: updatePassword } = useSWRMutation<IPasswordUpdateModel>('/password/update', fetcher.put);
-
   const message = useMessage();
 
-  const onFinish = useCallback(async () => {
+  const { isMutating, trigger: updatePassword } = useSWRMutation(
+    '/password/update',
+    (url, { arg }: { arg: IPasswordUpdateModel }) => fetcher.put(url, arg),
+    {
+      onSuccess: () => {
+        onOk();
+        message.success('密码设置成功');
+      },
+      onError: (err) => {
+        message.error(get(err, 'response.data.message', '密码设置失败'));
+      },
+    },
+  );
+
+  const onFinish = useCallback(() => {
     const passwordUpdateModel = form.getFieldsValue();
-    try {
-      await updatePassword({
-        old_password: passwordUpdateModel.old_password,
-        password: passwordUpdateModel.password,
-        confirm_password: passwordUpdateModel.confirm_password,
-      });
-      onOk();
-      message.success('密码设置成功');
-    } catch (err) {
-      message.error('密码设置失败');
-      throw err;
-    }
-  }, [form, message, updatePassword, onOk]);
+    updatePassword({
+      old_password: passwordUpdateModel.old_password,
+      password: passwordUpdateModel.password,
+      confirm_password: passwordUpdateModel.confirm_password,
+    });
+  }, [form, updatePassword]);
 
   useEffect(() => {
     if (!open) {

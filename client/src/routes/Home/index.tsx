@@ -7,7 +7,7 @@ export default function Home() {
   const { data: apps = [], isLoading } = useApps();
 
   return (
-    <Spin spinning={isLoading}>
+    <Spin spinning={isLoading} size="large">
       <div className={styles.home}>
         <div className={styles.container}>
           {apps.map((item) => (

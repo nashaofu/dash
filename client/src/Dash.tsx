@@ -1,9 +1,7 @@
-import {
-  Suspense, useEffect, useRef, useState,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import {
-  ConfigProvider, theme, Spin, App,
+  ConfigProvider, theme, App, Spin,
 } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import wallpaper from '@/assets/wallpaper.jpeg';
@@ -64,10 +62,12 @@ export default function Dash() {
                 : 'none',
             }}
           />
-          <Spin spinning={isLoading}>
-            <Suspense fallback={<Spin spinning />}>
-              <RouterProvider router={router} />
-            </Suspense>
+          <Spin
+            spinning={
+              isLoading && !window.location.pathname.startsWith('/login')
+            }
+          >
+            <RouterProvider router={router} />
           </Spin>
         </div>
       </App>

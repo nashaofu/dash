@@ -1,9 +1,10 @@
 import {
   Form, Input, Button, Spin, Checkbox, theme,
 } from 'antd';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import useSWRMutation from 'swr/mutation';
+import { get } from 'lodash-es';
 import fetcher from '@/utils/fetcher';
 import useUser from '@/store/user';
 import styles from './index.module.less';
@@ -17,17 +18,22 @@ interface ILoginData {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { data: user, mutate: mutateUser } = useUser();
+  const { mutate: mutateUser } = useUser();
 
   const {
     isMutating,
     error,
     trigger: login,
-  } = useSWRMutation<ILoginData, IUser>('/auth/login', fetcher.post, {
-    onSuccess: (data) => {
-      mutateUser(data);
+  } = useSWRMutation(
+    '/auth/login',
+    (url, { arg }: { arg: ILoginData }) => fetcher.post<unknown, IUser>(url, arg),
+    {
+      onSuccess: (data) => {
+        mutateUser(data);
+        navigate('/', { replace: true });
+      },
     },
-  });
+  );
 
   const [loginStorage, setLoginStorage] = useLocalStorage<string>('login');
 
@@ -44,13 +50,6 @@ export default function Login() {
     }
     login(model);
   }, [form, login, setLoginStorage]);
-
-  useEffect(() => {
-    if (user?.id) {
-      navigate('/', { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
 
   return (
     <div
@@ -128,7 +127,8 @@ export default function Login() {
               color: token.colorError,
             }}
           >
-            登录失败： 用户名、邮箱或密码错误
+            登录失败：
+            {get(error, 'response.data.message', '用户名、邮箱或密码错误')}
           </div>
         )}
       </Spin>
