@@ -3,6 +3,7 @@ import {
 } from 'antd';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { mutate } from 'swr';
 import useSWRMutation from 'swr/mutation';
 import { get } from 'lodash-es';
 import fetcher from '@/utils/fetcher';
@@ -29,6 +30,9 @@ export default function Login() {
     (url, { arg }: { arg: ILoginData }) => fetcher.post<unknown, IUser>(url, arg),
     {
       onSuccess: (data) => {
+        mutate(() => true, undefined, {
+          revalidate: false,
+        });
         mutateUser(data);
         navigate('/', { replace: true });
       },
