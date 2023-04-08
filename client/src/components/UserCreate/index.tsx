@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
 import { get } from 'lodash-es';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import useSWRMutation from 'swr/mutation';
 import { IUser } from '@/types/user';
 import fetcher from '@/utils/fetcher';
 import ImageUploader from '../ImageUploader';
@@ -26,31 +26,32 @@ export interface IUserCreateProps {
 
 export default function UserCreate({ open, onOk, onCancel }: IUserCreateProps) {
   const [form] = Form.useForm<IUserModel>();
-
-  const { isMutating, trigger: createUser } = useSWRMutation<IUserCreateData, IUser>(
-    '/user/create',
-    fetcher.post,
-  );
-
   const message = useMessage();
 
-  const onFinish = useCallback(async () => {
+  const { isMutating, trigger: createUser } = useSWRMutation(
+    '/user/create',
+    (url, { arg }: { arg: IUserCreateData }) => fetcher.post<unknown, IUser>(url, arg),
+    {
+      onSuccess: () => {
+        onOk();
+        message.success('创建成功');
+      },
+      onError: (err) => {
+        message.error(get(err, 'response.data.message', '创建失败'));
+      },
+    },
+  );
+
+  const onFinish = useCallback(() => {
     const userModel = form.getFieldsValue();
-    try {
-      await createUser({
-        name: userModel.name,
-        email: userModel.email,
-        password: userModel.password,
-        confirm_password: userModel.confirm_password,
-        avatar: uploadFileToUri(userModel.avatar?.[0]),
-      });
-      onOk();
-      message.success('创建成功');
-    } catch (err) {
-      message.error(get(err, 'response.data.message', '创建失败'));
-      throw err;
-    }
-  }, [form, message, createUser, onOk]);
+    createUser({
+      name: userModel.name,
+      email: userModel.email,
+      password: userModel.password,
+      confirm_password: userModel.confirm_password,
+      avatar: uploadFileToUri(userModel.avatar?.[0]),
+    });
+  }, [form, createUser]);
 
   useEffect(() => {
     if (!open) {

@@ -10,8 +10,8 @@ import {
 } from 'antd';
 import dayjs from 'dayjs';
 import useSWR from 'swr';
+import useSWRMutation from 'swr/mutation';
 import { get } from 'lodash-es';
-import useSWRMutation from '@/hooks/useSWRMutation';
 import fetcher from '@/utils/fetcher';
 import { IUser } from '@/types/user';
 import { uriToUrl } from '@/utils/file';
@@ -19,7 +19,7 @@ import styles from './index.module.less';
 import useModal from '@/hooks/useModal';
 import useMessage from '@/hooks/useMessage';
 
-interface IFetchUserListRes {
+interface IFetchUserListResp {
   items: IUser[];
   total: number;
 }
@@ -38,7 +38,7 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
     mutate: mutateUserList,
   } = useSWR(
     ['/user/list', { page, size }],
-    ([url, params]) => fetcher.get<unknown, IFetchUserListRes>(url, { params }),
+    ([url, params]) => fetcher.get<unknown, IFetchUserListResp>(url, { params }),
     {
       revalidateOnFocus: false,
     },
@@ -54,9 +54,9 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
     fetchUserList: mutateUserList,
   }));
 
-  const { trigger: deleteUser } = useSWRMutation<string>(
+  const { trigger: deleteUser } = useSWRMutation(
     '/user/delete',
-    (url, id) => fetcher.delete(`${url}/${id}`),
+    (url, { arg }: { arg: string }) => fetcher.delete(`${url}/${arg}`),
     {
       onSuccess: () => {
         if (page !== 1) {
@@ -67,6 +67,7 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
       },
       onError: (err) => {
         message.error(get(err, 'response.data.message', '删除失败'));
+        mutateUserList();
       },
     },
   );

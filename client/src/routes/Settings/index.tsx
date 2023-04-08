@@ -4,7 +4,7 @@ import {
 import { useCallback, useEffect } from 'react';
 import { EditOutlined, SaveOutlined } from '@ant-design/icons';
 import { get } from 'lodash-es';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import useSWRMutation from 'swr/mutation';
 import useBoolean from '@/hooks/useBoolean';
 import fetcher from '@/utils/fetcher';
 import { IUploadFile, uploadFileToUri, uriToUploadFile } from '@/utils/file';
@@ -16,10 +16,6 @@ import styles from './index.module.less';
 
 interface ISettingsModel extends Pick<ISetting, 'theme' | 'bg_blur'> {
   bg_image: IUploadFile[];
-}
-
-interface ISettingsUpdateData extends Omit<ISettingsModel, 'bg_image'> {
-  bg_image?: string;
 }
 
 export default function Settings() {
@@ -35,44 +31,43 @@ export default function Settings() {
   const [isEditable, isEditableActions] = useBoolean(false);
   const message = useMessage();
 
-  const { isMutating: updateSettingLoading, trigger: updateSetting } = useSWRMutation<
-  ISettingsUpdateData,
-  ISettingsUpdateData
-  >(
+  const { isMutating: updateSettingLoading, trigger: updateSetting } = useSWRMutation(
     '/setting/update',
-    async (url, data) => {
-      await fetcher.put(url, data);
-      return data;
-    },
+    (url, { arg }: { arg: ISetting }) => fetcher.put<unknown, ISetting>(url, arg),
     {
-      onSuccess: (data) => {
-        if (!user) {
-          return;
-        }
-        mutateUser({ ...user, setting: data });
+      onSuccess: (newSetting) => {
+        message.success('保存成功');
+        mutateUser((oldUser) => {
+          if (!oldUser) {
+            return undefined;
+          }
+
+          return {
+            ...oldUser,
+            setting: newSetting,
+          };
+        });
+        isEditableActions.setFalse();
+      },
+      onError: (err) => {
+        message.error(get(err, 'response.data.message', '保存失败'));
+        mutateUser();
       },
     },
   );
 
   const loading = fetchUserLoading || updateSettingLoading;
 
-  const onFinish = useCallback(async () => {
+  const onFinish = useCallback(() => {
     const settingsModel = form.getFieldsValue();
     const bgImage = uploadFileToUri(settingsModel.bg_image?.[0]);
 
-    try {
-      await updateSetting({
-        theme: settingsModel.theme,
-        bg_image: bgImage,
-        bg_blur: settingsModel.bg_blur,
-      });
-      message.success('保存成功');
-      isEditableActions.setFalse();
-    } catch (err) {
-      message.error(get(err, 'response.data.message', '保存失败'));
-      throw err;
-    }
-  }, [form, message, updateSetting, isEditableActions]);
+    updateSetting({
+      theme: settingsModel.theme,
+      bg_image: bgImage,
+      bg_blur: settingsModel.bg_blur,
+    });
+  }, [form, updateSetting]);
 
   useEffect(() => {
     if (!setting) {

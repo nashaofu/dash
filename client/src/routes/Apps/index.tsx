@@ -3,31 +3,29 @@ import { PlusOutlined } from '@ant-design/icons';
 import {
   DndContext,
   DragEndEvent,
-  KeyboardSensor,
   PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
   closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-} from '@dnd-kit/sortable';
+import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { Spin } from 'antd';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import useSWRMutation from 'swr/mutation';
 import useBoolean from '@/hooks/useBoolean';
 import AppEdit, { IAppEditData } from '@/components/AppEdit';
 import fetcher from '@/utils/fetcher';
 import { IApp } from '@/types/app';
 import useModal from '@/hooks/useModal';
 import useMessage from '@/hooks/useMessage';
+import useApps from '@/store/apps';
 import EditableApp from './components/EditableApp';
 import styles from './index.module.less';
-import useApps from '@/store/apps';
 
-type ISortAppData = Array<{ id: string }>;
+type ICreateAppData = IAppEditData;
+type IUpdateAppData = IAppEditData & { id: string };
 
 export default function Apps() {
   const {
@@ -39,58 +37,62 @@ export default function Apps() {
   const modal = useModal();
   const message = useMessage();
   const pointerSensor = useSensor(PointerSensor);
-  const keyboardSensor = useSensor(KeyboardSensor, {
-    coordinateGetter: sortableKeyboardCoordinates,
-  });
-  const sensors = useSensors(pointerSensor, keyboardSensor);
+  const keyboardSensor = useSensor(KeyboardSensor);
+  const touchSensor = useSensor(TouchSensor);
+  const sensors = useSensors(pointerSensor, touchSensor, keyboardSensor);
 
   const appIds = useMemo(() => apps.map((item) => item.id), [apps]);
 
   const [isOpenAppEdit, isOpenAppEditActions] = useBoolean(false);
   const [currentApp, setCurrentApp] = useState<IApp | null>(null);
 
-  const { trigger: sortApp } = useSWRMutation<ISortAppData>(
-    '/app/sort',
-    fetcher.put,
-    {
-      onSuccess: () => mutateApps(),
+  const { trigger: sortApp } = useSWRMutation(
+    '/app/all',
+    async (url, { arg }: { arg: IApp[] }) => {
+      await fetcher.put(
+        'app/sort',
+        arg.map((item) => ({ id: item.id })),
+      );
+      return arg;
     },
   );
 
-  const { isMutating: createAppLoading, trigger: createApp } = useSWRMutation<
-  IAppEditData,
-  IApp
-  >('/app/create', fetcher.post, {
-    onSuccess: (app) => mutateApps([...apps, app]),
-  });
+  const { isMutating: createAppLoading, trigger: createApp } = useSWRMutation(
+    '/app/create',
+    (url, { arg }: { arg: ICreateAppData }) => fetcher.post<unknown, IApp>(url, arg),
+    {
+      onSuccess: (app) => mutateApps([...apps, app]),
+    },
+  );
 
-  const { trigger: deleteApp } = useSWRMutation<string, string>(
+  const { trigger: deleteApp } = useSWRMutation(
     '/app/delete',
-    async (url, id) => {
-      await fetcher.delete(`${url}/${id}`);
-      return id;
+    async (url, { arg }: { arg: string }) => {
+      await fetcher.delete(`${url}/${arg}`);
+      return arg;
     },
     {
-      onSuccess: (id) => {
-        mutateApps(apps.filter((item) => item.id !== id));
+      onSuccess: (appId) => {
+        mutateApps(apps?.filter((item) => item.id !== appId));
       },
     },
   );
 
-  const { trigger: updateApp, isMutating: updateAppLoading } = useSWRMutation<
-  IAppEditData & { id: string },
-  IApp
-  >('/app/update', fetcher.put, {
-    onSuccess: (app) => {
-      const index = apps.findIndex((item) => item.id === app.id);
-      if (index === -1) {
-        return;
-      }
-      const newApps = [...apps];
-      newApps[index] = app;
-      mutateApps(newApps);
+  const { isMutating: updateAppLoading, trigger: updateApp } = useSWRMutation(
+    '/app/update',
+    (url, { arg }: { arg: IUpdateAppData }) => fetcher.put<unknown, IApp>(url, arg),
+    {
+      onSuccess: (app) => {
+        const index = apps.findIndex((item) => item.id === app.id);
+        if (index === -1) {
+          return;
+        }
+        const newApps = [...apps];
+        newApps[index] = app;
+        mutateApps(newApps);
+      },
     },
-  });
+  );
 
   const onDragEnd = useCallback(
     ({ active, over }: DragEndEvent) => {
@@ -100,11 +102,13 @@ export default function Apps() {
 
       const oldIndex = appIds.indexOf(active.id as string);
       const newIndex = appIds.indexOf(over.id as string);
-      const ids = arrayMove(appIds, oldIndex, newIndex);
-      sortApp(ids.map((id) => ({ id })));
-      mutateApps(arrayMove(apps, oldIndex, newIndex), { revalidate: false });
+      const newApps = arrayMove(apps, oldIndex, newIndex);
+      sortApp(newApps, {
+        optimisticData: newApps,
+        rollbackOnError: true,
+      });
     },
-    [appIds, apps, mutateApps, sortApp],
+    [appIds, apps, sortApp],
   );
 
   const onEdit = useCallback(
@@ -160,7 +164,7 @@ export default function Apps() {
       collisionDetection={closestCenter}
       onDragEnd={onDragEnd}
     >
-      <Spin spinning={fetchAppsLoading}>
+      <Spin spinning={fetchAppsLoading} size="large">
         <div className={styles.apps}>
           <div className={styles.container}>
             <SortableContext items={appIds}>

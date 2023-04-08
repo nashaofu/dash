@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { Upload, theme } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { IUploadFile } from '@/utils/file';
@@ -15,11 +15,11 @@ export interface IImageUploaderProps {
   onChange?: (val: IUploadFile[]) => unknown;
 }
 
-export default function ImageUploader({
+export default memo(({
   value = [],
   maxCount,
   onChange,
-}: IImageUploaderProps) {
+}: IImageUploaderProps) => {
   const isShowBtn = maxCount == null || value.length < maxCount;
   const message = useMessage();
   const { token } = theme.useToken();
@@ -66,4 +66,4 @@ export default function ImageUploader({
       )}
     </Upload>
   );
-}
+});

@@ -4,7 +4,8 @@ import {
 import { Button, Card, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { LogoutOutlined, PlusOutlined } from '@ant-design/icons';
-import useSWRMutation from '@/hooks/useSWRMutation';
+import useSWRMutation from 'swr/mutation';
+import { mutate } from 'swr';
 import useBoolean from '@/hooks/useBoolean';
 import fetcher from '@/utils/fetcher';
 import UserCreate from '@/components/UserCreate';
@@ -29,11 +30,13 @@ export default function Users() {
 
   const message = useMessage();
 
-  const { isMutating: logoutLoading, trigger: logout } = useSWRMutation<void>(
+  const { isMutating: logoutLoading, trigger: logout } = useSWRMutation(
     '/auth/logout',
-    fetcher.post,
+    (url) => fetcher.post(url),
     {
       onSuccess: () => {
+        // 清除所有缓存
+        mutate(() => true, undefined, { revalidate: false });
         mutateUser(undefined, { revalidate: false });
         navigate('/login');
       },
