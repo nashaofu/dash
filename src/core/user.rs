@@ -5,7 +5,7 @@ use entity::{apps, users};
 use lazy_static::lazy_static;
 use regex::Regex;
 use sea_orm::{
-  entity::Set, ActiveModelTrait, ColumnTrait, Condition, DbConn, DbErr, DeleteResult, EntityTrait,
+  entity::Set, ActiveModelTrait, ColumnTrait, DbConn, DbErr, DeleteResult, EntityTrait,
   IntoActiveModel, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, RuntimeErr::SqlxError,
 };
 use serde::{Deserialize, Serialize};
@@ -15,35 +15,6 @@ use validator::Validate;
 lazy_static! {
   static ref NAME_REGEX: Regex = Regex::new(r"^[a-zA-Z0-9]\w{4,29}$").unwrap();
   pub static ref PASSWORD_REGEX: Regex = Regex::new(r"^[\x21-\x7e]{8,30}$").unwrap();
-}
-
-#[derive(Debug, Validate, Serialize, Deserialize)]
-pub struct LoginData {
-  #[validate(length(min = 5, max = 30, message = "用户名/邮箱长度必须为 5 - 30 个字符"))]
-  login: String,
-  #[validate(length(min = 8, max = 30, message = "密码长度必须为 8 - 30 个字符"))]
-  password: String,
-}
-
-pub async fn login(db: &DbConn, data: &LoginData) -> Result<users::Model, AppError> {
-  let user = users::Entity::find()
-    .filter(
-      Condition::any()
-        .add(users::Column::Name.eq(&data.login))
-        .add(users::Column::Email.eq(&data.login)),
-    )
-    .one(db)
-    .await?
-    .ok_or(AppError::new(
-      StatusCode::UNAUTHORIZED,
-      404,
-      "用户名或邮箱不存在",
-    ))?;
-
-  crypto::verify(&user.password, &data.password)
-    .map_err(AppError::from_err)?
-    .then_some(user)
-    .ok_or(AppError::new(StatusCode::UNAUTHORIZED, 401, "密码错误"))
 }
 
 pub async fn get_user_info(db: &DbConn, id: i64) -> Result<users::Model, AppError> {
@@ -60,7 +31,7 @@ pub struct GetUserListQuery {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GetUserListRes {
+pub struct GetUserListResp {
   items: Vec<users::Model>,
   total: u64,
 }
@@ -69,7 +40,7 @@ pub async fn get_user_list(
   db: &DbConn,
   operator_id: i64,
   data: &GetUserListQuery,
-) -> Result<GetUserListRes, AppError> {
+) -> Result<GetUserListResp, AppError> {
   users::Entity::find_by_id(operator_id)
     .filter(users::Column::IsAdmin.eq(true))
     .one(db)
@@ -83,7 +54,7 @@ pub async fn get_user_list(
   let items = user_pages.fetch_page(data.page.unwrap_or(1) - 1).await?;
   let total = user_pages.num_items().await?;
 
-  Ok(GetUserListRes { items, total })
+  Ok(GetUserListResp { items, total })
 }
 
 #[derive(Debug, Validate, Serialize, Deserialize)]

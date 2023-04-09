@@ -1,7 +1,8 @@
 use actix_web::{body::BoxBody, http::StatusCode, HttpResponse, ResponseError};
+use reqwest;
 use sea_orm::DbErr;
 use serde::Serialize;
-use std::{error::Error, fmt, num::ParseIntError, result};
+use std::{error::Error, fmt, num::ParseIntError, result, string::FromUtf8Error};
 use validator::ValidationErrors;
 
 pub type Result<T, E = AppError> = result::Result<T, E>;
@@ -77,6 +78,20 @@ impl From<anyhow::Error> for AppError {
 impl From<ParseIntError> for AppError {
   fn from(err: ParseIntError) -> Self {
     log::error!("ParseIntError {}", err);
+    AppError::from_err(err)
+  }
+}
+
+impl From<FromUtf8Error> for AppError {
+  fn from(err: FromUtf8Error) -> Self {
+    log::error!("FromUtf8Error {}", err);
+    AppError::from_err(err)
+  }
+}
+
+impl From<reqwest::Error> for AppError {
+  fn from(err: reqwest::Error) -> Self {
+    log::error!("reqwest::Error {}", err);
     AppError::from_err(err)
   }
 }

@@ -1,4 +1,4 @@
-use crate::{core::user, errors::Result};
+use crate::{core::auth, errors::Result};
 
 use actix_identity::Identity;
 use actix_web::{post, web, HttpMessage, HttpRequest, HttpResponse, Responder};
@@ -9,10 +9,10 @@ use validator::Validate;
 async fn login(
   db: web::Data<DbConn>,
   req: HttpRequest,
-  data: web::Json<user::LoginData>,
+  data: web::Json<auth::LoginData>,
 ) -> Result<impl Responder> {
   data.validate()?;
-  let login_user = user::login(&db, &data).await?;
+  let login_user = auth::login(&db, &data).await?;
 
   Identity::login(&req.extensions(), login_user.id.to_string())?;
 

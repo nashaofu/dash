@@ -12,7 +12,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
-import { Spin } from 'antd';
+import { theme, Spin } from 'antd';
 import useSWRMutation from 'swr/mutation';
 import useBoolean from '@/hooks/useBoolean';
 import AppEdit, { IAppEditData } from '@/components/AppEdit';
@@ -36,6 +36,7 @@ export default function Apps() {
 
   const modal = useModal();
   const message = useMessage();
+  const { token } = theme.useToken();
   const pointerSensor = useSensor(PointerSensor);
   const keyboardSensor = useSensor(KeyboardSensor);
   const touchSensor = useSensor(TouchSensor);
@@ -181,8 +182,13 @@ export default function Apps() {
               <div className={styles.add}>
                 <div
                   className={styles.addBtn}
+                  style={{
+                    backgroundColor: token.colorBgContainer,
+                    border: `1px solid ${token.colorBgBase}`,
+                  }}
                   onClick={isOpenAppEditActions.setTrue}
-                  role="none"
+                  role="button"
+                  tabIndex="0"
                 >
                   <PlusOutlined size={26} />
                   <span>添加应用</span>
