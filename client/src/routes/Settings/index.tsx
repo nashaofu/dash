@@ -36,7 +36,6 @@ export default function Settings() {
     (url, { arg }: { arg: ISetting }) => fetcher.put<unknown, ISetting>(url, arg),
     {
       onSuccess: (newSetting) => {
-        message.success('保存成功');
         mutateUser((oldUser) => {
           if (!oldUser) {
             return undefined;
@@ -48,6 +47,10 @@ export default function Settings() {
           };
         });
         isEditableActions.setFalse();
+        // 防止主题改变，提示消息主题还是之前的主题
+        setTimeout(() => {
+          message.success('保存成功');
+        }, 200);
       },
       onError: (err) => {
         message.error(get(err, 'response.data.message', '保存失败'));

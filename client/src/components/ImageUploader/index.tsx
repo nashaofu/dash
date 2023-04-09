@@ -15,55 +15,54 @@ export interface IImageUploaderProps {
   onChange?: (val: IUploadFile[]) => unknown;
 }
 
-export default memo(({
-  value = [],
-  maxCount,
-  onChange,
-}: IImageUploaderProps) => {
-  const isShowBtn = maxCount == null || value.length < maxCount;
-  const message = useMessage();
-  const { token } = theme.useToken();
+export default memo(
+  ({ value = [], maxCount, onChange }: IImageUploaderProps) => {
+    const isShowBtn = maxCount == null || value.length < maxCount;
+    const message = useMessage();
+    const { token } = theme.useToken();
 
-  const beforeUpload = useCallback(
-    (file: File) => {
-      const types = ['image/png', 'image/jpeg'];
-      if (!types.includes(file.type)) {
-        message.error('只支持png与jpeg格式的图片');
-        return Upload.LIST_IGNORE;
-      }
+    const beforeUpload = useCallback(
+      (file: File) => {
+        const types = ['png', 'jpeg', 'jpg', 'ico', 'bmp', 'webp', 'svg'];
+        const extname = file.name.split('.').slice(-1)[0];
+        if (!types.includes(extname)) {
+          message.error(`只支持 ${types.join('、')} 格式的图片`);
+          return Upload.LIST_IGNORE;
+        }
 
-      return true;
-    },
-    [message],
-  );
+        return true;
+      },
+      [message],
+    );
 
-  const onUploadChange = useCallback(
-    (e: IUploadOnChangeOpts) => {
-      onChange?.(e.fileList);
-    },
-    [onChange],
-  );
+    const onUploadChange = useCallback(
+      (e: IUploadOnChangeOpts) => {
+        onChange?.(e.fileList);
+      },
+      [onChange],
+    );
 
-  return (
-    <Upload
-      fileList={value}
-      name="file"
-      listType="picture-card"
-      action="/api/file/image/upload"
-      maxCount={maxCount}
-      beforeUpload={beforeUpload}
-      onChange={onUploadChange}
-    >
-      {isShowBtn && (
-        <div
-          className={styles.btn}
-          style={{
-            color: `${token.colorTextSecondary}`,
-          }}
-        >
-          <PlusOutlined />
-        </div>
-      )}
-    </Upload>
-  );
-});
+    return (
+      <Upload
+        fileList={value}
+        name="file"
+        listType="picture-card"
+        action="/api/file/image/upload"
+        maxCount={maxCount}
+        beforeUpload={beforeUpload}
+        onChange={onUploadChange}
+      >
+        {isShowBtn && (
+          <div
+            className={styles.btn}
+            style={{
+              color: `${token.colorTextSecondary}`,
+            }}
+          >
+            <PlusOutlined />
+          </div>
+        )}
+      </Upload>
+    );
+  },
+);

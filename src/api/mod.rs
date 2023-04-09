@@ -1,5 +1,6 @@
 mod app;
 mod auth;
+mod proxy;
 mod file;
 mod password;
 mod setting;
@@ -15,6 +16,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(auth::logout),
     )
     .service(web::scope("/file").service(file::image::upload))
+    .service(web::scope("/proxy").service(proxy::get))
     .service(
       web::scope("/user")
         .service(user::info)

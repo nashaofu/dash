@@ -4,7 +4,8 @@ use actix_web::http::StatusCode;
 use entity::apps;
 use sea_orm::{
   entity::Set, ActiveModelTrait, ColumnTrait, DbConn, DbErr, DeleteResult, EntityTrait,
-  IntoActiveModel, ModelTrait, PaginatorTrait, QueryFilter, TransactionTrait,
+  IntoActiveModel, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder,
+  TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 use utils::deserialize::str_to_i64;
@@ -13,6 +14,7 @@ use validator::Validate;
 pub async fn get_user_all_app(db: &DbConn, user_id: i64) -> Result<Vec<apps::Model>, AppError> {
   apps::Entity::find()
     .filter(apps::Column::OwnerId.eq(user_id))
+    .order_by_asc(apps::Column::Index)
     .all(db)
     .await
     .map_err(Into::into)
@@ -38,17 +40,30 @@ pub async fn create_app(
   operator_id: i64,
   data: &CreateAppData,
 ) -> Result<apps::Model, AppError> {
-  let app_pages = apps::Entity::find()
+  let last_index_app = apps::Entity::find()
     .filter(apps::Column::OwnerId.eq(operator_id))
-    .paginate(db, 1);
-  let total = app_pages.num_items().await?;
+    .order_by_desc(apps::Column::Index)
+    .one(db)
+    .await?;
+
+  let index = match last_index_app {
+    Some(app) => app.index + 1,
+    _ => {
+      let app_pages = apps::Entity::find()
+        .filter(apps::Column::OwnerId.eq(operator_id))
+        .paginate(db, 1);
+
+      let total = app_pages.num_items().await?;
+      total as i32
+    }
+  };
 
   apps::ActiveModel {
     name: Set(data.name.clone()),
     url: Set(data.url.clone()),
     icon: Set(data.icon.clone()),
     description: Set(data.description.clone()),
-    index: Set(total as i32),
+    index: Set(index),
     owner_id: Set(operator_id),
     ..Default::default()
   }
