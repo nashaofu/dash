@@ -34,11 +34,33 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: dash-client
+          name: dahs-client
           path: client/dist
           if-no-files-found: error
   build-server:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - target: x86_64-apple-darwin
+            host: macos-latest
+          - target: aarch64-apple-darwin
+            host: macos-latest
+          - target: x86_64-pc-windows-msvc
+            host: windows-latest
+          - target: aarch64-pc-windows-msvc
+            host: windows-latest
+          # - target: x86_64-unknown-linux-gnu
+          #   host: ubuntu-latest
+          # - target: aarch64-unknown-linux-gnu
+          #   host: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            host: ubuntu-latest
+          - target: aarch64-unknown-linux-musl
+            host: ubuntu-latest
+
+    name: build ${{ matrix.settings.target }}
+    runs-on: ${{ matrix.settings.host }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -51,46 +73,23 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Build server
-        uses: addnab/docker-run-action@v3
+          key: ${{ runner.os }}-${{ matrix.settings.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          image: rust:latest
-          options: "--user 0:0 -v ${{ github.workspace }}:/build -w /build"
-          run: cargo install --path . && strip target/release/dash
+          toolchain: stable
+          target: ${{ matrix.settings.target }}
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target ${{ matrix.settings.target }}
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: dash-server
-          path: target/release/dash
-          if-no-files-found: error
-  publish:
-    runs-on: ubuntu-latest
-    needs:
-      - build-client
-      - build-server
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Download dash-client artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: dash-client
-          path: www
-      - name: Download dash-server artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: dash-server
-          path: .
-      - name: Display structure of downloaded files
-        run: ls -R
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: dash
-          path: |
-            www
-            dash
+          name: dash-${{ matrix.settings.target }}
+          path: target/${{ matrix.settings.target }}/release/dash
           if-no-files-found: error
 
   build-docker:
@@ -122,10 +121,10 @@ jobs:
         with:
           name: dash-client
           path: client/dist
-      - name: Download dash-server artifact
+      - name: Download dash-x86_64-unknown-linux-musl artifact
         uses: actions/download-artifact@v3
         with:
-          name: dash-server
+          name: dash-x86_64-unknown-linux-musl
           path: target/release
       - name: Display structure of downloaded files
         run: ls -R
@@ -138,5 +137,28 @@ jobs:
         with:
           context: .
           file: build.Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.REGISTRY }}/nashaofu/dash:latest
+
+      - name: Remove target/release
+        run: rm -rf target/release
+      - name: Download dash-aarch64-unknown-linux-musl artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dash-aarch64-unknown-linux-musl
+          path: target/release
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Change file mode
+        run: chmod +x target/release/dash
+
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: build.Dockerfile
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ env.REGISTRY }}/nashaofu/dash:latest

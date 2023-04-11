@@ -1,4 +1,4 @@
-FROM debian:stable-slim
+FROM alpine:latest
 
 WORKDIR /opt/dash
 
