@@ -1,8 +1,10 @@
+use std::time::Duration;
+
 use crate::errors::AppError;
 
 use actix_web::web;
 use futures_core::Stream;
-use reqwest;
+use reqwest::Client;
 use serde::Deserialize;
 use validator::Validate;
 
@@ -18,7 +20,10 @@ pub struct ProxyData {
 pub async fn get(
   data: &ProxyData,
 ) -> Result<impl Stream<Item = reqwest::Result<web::Bytes>>, AppError> {
-  let resp = reqwest::get(&data.url).await?;
-
+  let client = Client::builder()
+    .danger_accept_invalid_certs(true)
+    .connect_timeout(Duration::from_secs(120))
+    .build()?;
+  let resp = client.get(&data.url).send().await?;
   Ok(resp.bytes_stream())
 }

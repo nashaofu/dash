@@ -6,6 +6,7 @@ COPY target/release/dash .
 COPY client/dist www
 
 EXPOSE 3000
+VOLUME ["/opt/dash/data"]
 
 ENV RUST_LOG=info \
   RUST_BACKTRACE=1 \
