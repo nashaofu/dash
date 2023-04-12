@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import {
-  Form, Input, Modal, Space, Button, Tooltip,
+ Form, Input, Modal, Space, Button, Tooltip 
 } from 'antd';
 import useSWRMutation from 'swr/mutation';
 import { get } from 'lodash-es';
@@ -114,8 +114,8 @@ export default function AppEdit({
 
     if (app) {
       form.setFieldsValue({
-        name: app.name,
         url: app.url,
+        name: app.name,
         description: app.description,
         icon: app.icon ? [uriToUploadFile(app.icon)] : [],
       });
@@ -149,26 +149,27 @@ export default function AppEdit({
         onFinish={onFinish}
         scrollToFirstError
       >
-        <Form.Item
-          label="应用 URL"
-          name="url"
-          required
-          validateFirst
-          rules={[
-            {
-              type: 'url',
-              required: true,
-              message: '请输入合法的应用 URL',
-            },
-            {
-              type: 'string',
-              max: 255,
-              message: '应用 URL 长度不得超过 255 个字符',
-            },
-          ]}
-        >
+        <Form.Item label="应用 URL" required>
           <Space.Compact block>
-            <Input showCount maxLength={255} />
+            <Form.Item
+              name="url"
+              validateFirst
+              noStyle
+              rules={[
+                {
+                  type: 'url',
+                  required: true,
+                  message: '请输入合法的应用 URL',
+                },
+                {
+                  type: 'string',
+                  max: 255,
+                  message: '应用 URL 长度不得超过 255 个字符',
+                },
+              ]}
+            >
+              <Input showCount maxLength={255} />
+            </Form.Item>
             <Button type="default" loading={isMutating} onClick={onCrawl}>
               自动抓取
               <Tooltip
