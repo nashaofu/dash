@@ -1,6 +1,6 @@
 [package]
 name = "dash"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 publish = false
 
@@ -24,7 +24,6 @@ regex = "1.7.1"
 lazy_static = "1.4.0"
 actix-multipart-extract = "0.1.5"
 chrono = "0.4.23"
-reqwest = { version = "0.11.16", features = ["stream"] }
 urlencoding = "2.1.2"
 futures-core = "0.3.28"
 entity = { path = "./entity" }
@@ -33,4 +32,9 @@ utils = { path = "./utils" }
 
 [dependencies.sea-orm]
 version = "0.11.0"
-features = ["debug-print", "sqlx-all", "runtime-async-std-native-tls"]
+features = ["debug-print", "sqlx-all", "runtime-async-std-rustls"]
+
+[dependencies.reqwest]
+version = "0.11.16"
+default-features = false
+features = ["stream", "rustls-tls-native-roots"]

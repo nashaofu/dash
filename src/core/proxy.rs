@@ -21,7 +21,6 @@ pub async fn get(
   data: &ProxyData,
 ) -> Result<impl Stream<Item = reqwest::Result<web::Bytes>>, AppError> {
   let client = Client::builder()
-    .danger_accept_invalid_certs(true)
     .connect_timeout(Duration::from_secs(120))
     .build()?;
   let resp = client.get(&data.url).send().await?;

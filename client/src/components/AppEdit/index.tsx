@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import {
- Form, Input, Modal, Space, Button, Tooltip 
+  Form, Input, Modal, Space, Button, Tooltip,
 } from 'antd';
 import useSWRMutation from 'swr/mutation';
 import { get } from 'lodash-es';
