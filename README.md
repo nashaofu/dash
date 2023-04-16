@@ -1,6 +1,6 @@
 # Dash
 
-Dash is a fast and lightweight private web app navigation panel. It is inspired by [Heimdall](https://github.com/linuxserver/Heimdall) but with some improvements to make it faster and lighter.
+Dash is a fast and lightweight private web application navigation panel. It was inspired by [Heimdall](https://github.com/linuxserver/Heimdall), but with some improvements to make it faster and lighter.
 
 English | [简体中文](README-zh_CN.md)
 
@@ -9,17 +9,17 @@ English | [简体中文](README-zh_CN.md)
 ## Features
 
 - Private deployment.
-- Default data storage with SQLite but also supports MySQL and Postgres.
-- Multiple user support: Each user has their own independent navigation page.
+- Default storage using sqlite, also supports mysql and postgres.
+- Multi-user support: each user has their own independent navigation page.
 - Theme switching: supports light and dark themes.
 - Low resource consumption and fast running speed.
 - Cross-platform: can run on Linux, macOS, and Windows operating systems.
 
 ## Installation and Usage
 
-### Docker (Recommended)
+### Using Docker (recommended)
 
-It is recommended to use Docker to install Dash, which is simple and convenient. Just run the following command:
+We recommend using Docker for installation as it is simple and convenient. Just run the following command:
 
 ```sh
 docker pull ghcr.io/nashaofu/dash:latest
@@ -30,20 +30,31 @@ docker run -d \
   ghcr.io/nashaofu/dash:latest
 ```
 
-After that, you can use it by visiting `http://127.0.0.1:3000` in your browser. The default account and password are `admin/password`.
+Then, you can use it by accessing `http://127.0.0.1:3000` in your browser. The default username and password are `admin/password`.
 
-If you need to customize the configuration, you can copy the `settings.example.toml` file in the project root directory to the `/opt/dash/data` directory and rename it to `settings.toml`. For specific configurations, please refer to the Configuration section.
+If you need to customize the configuration, you can copy the `settings.example.toml` file in the project root directory to the `/opt/dash/data` directory and rename it to `settings.toml`. For specific configurations, refer to the Configuration section.
 
-### System installation
+### Using system
 
-Binary packages for corresponding platforms are not currently provided, and users can refer to the contribution guidelines to build them themselves.
+1. Go to the [release](https://github.com/nashaofu/dash/releases) page to download `dash-client.zip` and `dash-xxxx.zip`, where `xxxx` represents the system architecture. Choose according to your own situation.
+2. Create a new directory `dash`, unzip `dash-client.zip` to `dash/www`, unzip `dash-xxxx.zip` to `dash` directory. Finally, the directory structure is as follows:
+
+   ```bash
+   .
+   ├── dash # dash-xxxx.zip
+   └── www # dash-client.zip
+       ├── ... # other files
+       └── index.html
+   ```
+
+3. Run `./dash` in the terminal to start the service.
 
 ## Configuration
 
-The project configuration file is `settings.toml`, and the configuration is as follows:
+The project configuration file is `settings.toml`, which contains the following configurations:
 
 ```toml
-# Server port number
+# Service port number
 port = 3000
 # Database configuration
 [database]
@@ -52,7 +63,7 @@ url = "postgres://postgres:password@db:5432/dash"
 
 ## Contribution Guidelines
 
-If you want to contribute to Dash, you can follow these steps:
+If you would like to contribute to Dash, please follow these steps:
 
 1. Clone the project to your local machine:
 
@@ -66,7 +77,7 @@ If you want to contribute to Dash, you can follow these steps:
    git checkout -b my-feature-branch
    ```
 
-3. Start the project: You need to install Rust, Node.js, and Yarn. If you are compiling on Linux, you may need to install `libssl-dev`.
+3. Start the project: You need to install rust, nodejs, and yarn.
 
    ```sh
    # Start the server project
@@ -75,7 +86,7 @@ If you want to contribute to Dash, you can follow these steps:
    cd client && yarn && yarn dev
    ```
 
-4. Modify and submit the code:
+4. Modify and commit the code:
 
    ```sh
    git add .
@@ -92,4 +103,4 @@ If you want to contribute to Dash, you can follow these steps:
 
 ## License
 
-Dash is released under the MIT license. See [LICENSE](LICENSE) for details.
+Dash is licensed under the MIT license. For more information, please refer to the [LICENSE](LICENSE) file.
