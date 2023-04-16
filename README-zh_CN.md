@@ -36,7 +36,18 @@ docker run -d \
 
 ### 系统中使用
 
-目前未提供对应平台的二进制包，用户可参考贡献指南自行构建。
+1. 前往[release](https://github.com/nashaofu/dash/releases)页面下载`dash-client.zip`与`dash-xxxx.zip`，`xxxx`表示系统架构，请根据自己的情况选择
+2. 新建一个目录`dash`,解压`dash-client.zip`到`dash/www`,解压`dash-xxxx.zip`到`dash`目录下，最终目录结构如下
+
+   ```bash
+   .
+   ├── dash # dash-xxxx.zip
+   └── www # dash-client.zip
+       ├── ... # other files
+       └── index.html
+   ```
+
+3. 在终端中运行`./dash`即可启动服务
 
 ## 配置
 
@@ -66,7 +77,7 @@ url = "postgres://postgres:password@db:5432/dash"
    git checkout -b my-feature-branch
    ```
 
-3. 启动项目：你需要安装 rust、nodejs 与 yarn，如果是在 linux 上编译，则可能会需要安装`libssl-dev`
+3. 启动项目：你需要安装 rust、nodejs 与 yarn
 
    ```sh
    # 启动服务端项目

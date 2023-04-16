@@ -147,8 +147,14 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R
         working-directory: artifacts
+      - name: Pack as zip file
+        run: ls | xargs -I filename zip -r -m filename.zip filename
+        working-directory: artifacts
+      - name: Display structure of zip files
+        run: ls -R
+        working-directory: artifacts
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: artifacts/
+          files: artifacts/*.zip
