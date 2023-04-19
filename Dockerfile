@@ -1,34 +1,19 @@
-FROM rust:alpine as server
+FROM --platform=amd64 alpine:latest as builder
 
 WORKDIR /build
 
-COPY . .
+COPY build-docker.sh .
 
 ARG TARGETARCH
 
-RUN chmod +x ./build-server.sh
-RUN ./build-server.sh
-
-FROM --platform=amd64 node:alpine as client
-
-WORKDIR /build
-
-COPY client/package.json .
-COPY client/yarn.lock .
-
-RUN yarn install --frozen-lockfile --network-timeout 1000000
-
-COPY client .
-
-RUN yarn build
-
+RUN chmod +x ./build-docker.sh
+RUN ./build-docker.sh
 
 FROM alpine:latest
 
 WORKDIR /opt/dash
 
-COPY --from=server /build/dash .
-COPY --from=client /build/dist www
+COPY --from=builder /build/dash .
 
 EXPOSE 3000
 VOLUME ["/opt/dash/data"]
