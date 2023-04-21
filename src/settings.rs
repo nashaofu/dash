@@ -5,12 +5,18 @@ use serde::Deserialize;
 use std::{
   env,
   fs::{self, OpenOptions},
-  path::{Path, PathBuf},
+  path::PathBuf,
 };
 
 lazy_static! {
   // 数据目录
-  pub static ref DATA_DIR: PathBuf = Path::new(&env::var("DATA_DIR").unwrap_or(String::from("data"))).to_path_buf();
+  pub static ref DATA_DIR: PathBuf = env::current_dir().map(|current_dir| {
+    let data_dir = env::var("DATA_DIR").unwrap_or_else(|err| {
+      log::error!("Failed to get the environment variable DATA_DIR: {:?}", err);
+      String::from("data")
+    });
+    current_dir.join(data_dir).to_path_buf()
+  }).expect("DATA_DIR parse failed");
 
   pub static ref SETTINGS: Settings = Settings::init().expect("Settings init failed");
 }
@@ -60,6 +66,7 @@ impl Settings {
 
     settings.init_dir()?;
 
+    log::debug!("Init settings: {:?}", settings);
     Ok(settings)
   }
 
