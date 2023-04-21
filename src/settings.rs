@@ -5,12 +5,12 @@ use serde::Deserialize;
 use std::{
   env,
   fs::{self, OpenOptions},
-  path::{Path, PathBuf},
+  path::PathBuf,
 };
 
 lazy_static! {
   // 数据目录
-  pub static ref DATA_DIR: PathBuf = Path::new(&env::var("DATA_DIR").unwrap_or(String::from("data"))).to_path_buf();
+  pub static ref DATA_DIR: PathBuf = env::current_dir().map(|current_dir| current_dir.join(&env::var("DATA_DIR").unwrap_or(String::from("data")))).expect("Get DATA_DIR Failed").to_path_buf();
 
   pub static ref SETTINGS: Settings = Settings::init().expect("Settings init failed");
 }
