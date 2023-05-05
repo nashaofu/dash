@@ -49,7 +49,7 @@ export default function MyProfile({
         width: 100,
         render: (_, record) => {
           const avatar = record?.avatar ? uriToUrl(record.avatar) : undefined;
-          const username = record?.username?.slice(0, 1).toUpperCase();
+          const username = record?.username?.slice(0, 4).toUpperCase();
           return (
             <Avatar size={64} src={avatar} alt="用户头像" draggable={false}>
               {username}
