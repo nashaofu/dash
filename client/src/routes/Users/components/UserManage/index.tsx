@@ -76,7 +76,7 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
     (record: IUser) => {
       modal.confirm({
         title: '删除确认',
-        content: `确认删除 ${record.name} 吗？`,
+        content: `确认删除 ${record.username} 吗？`,
         onOk: () => deleteUser(record.id),
       });
     },
@@ -97,10 +97,9 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
         title: '用户名',
         dataIndex: 'name',
         key: 'name',
-        width: 200,
         render: (_, record) => (
           <div className={styles.name}>
-            <span>{record.name}</span>
+            <span>{record.username}</span>
             {record.id === user?.id && (
               <Tag className={styles.nameTag} color="blue">
                 当前用户
@@ -110,21 +109,16 @@ export default forwardRef(({ user, loading }: IUserManageProps, ref) => {
         ),
       },
       {
-        title: '邮箱',
-        dataIndex: 'email',
-        key: 'email',
-      },
-      {
         title: '用户头像',
         dataIndex: 'avatar',
         key: 'avatar',
         width: 100,
         render: (_, record) => {
           const avatar = record?.avatar ? uriToUrl(record.avatar) : undefined;
-          const name = record?.name?.slice(0, 1).toUpperCase();
+          const username = record?.username?.slice(0, 1).toUpperCase();
           return (
             <Avatar size={64} src={avatar} alt="用户头像" draggable={false}>
-              {name}
+              {username}
             </Avatar>
           );
         },

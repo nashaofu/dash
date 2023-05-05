@@ -22,14 +22,7 @@ impl MigrationTrait for Migration {
               .primary_key(),
           )
           .col(
-            ColumnDef::new(Users::Name)
-              .string()
-              .string_len(255)
-              .unique_key()
-              .not_null(),
-          )
-          .col(
-            ColumnDef::new(Users::Email)
+            ColumnDef::new(Users::Username)
               .string()
               .string_len(255)
               .unique_key()
@@ -109,8 +102,7 @@ impl MigrationTrait for Migration {
     let password = crypto::hash(&"password".to_string()).unwrap();
 
     users::ActiveModel {
-      name: Set("admin".to_owned()),
-      email: Set("admin@example.com".to_owned()),
+      username: Set("username".to_owned()),
       password: Set(password.to_owned()),
       is_admin: Set(true),
       ..Default::default()
@@ -136,8 +128,7 @@ impl MigrationTrait for Migration {
 enum Users {
   Table,
   Id,
-  Name,
-  Email,
+  Username,
   Password,
   Avatar,
   Setting,

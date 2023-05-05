@@ -11,8 +11,7 @@ export interface ISetting {
 
 export interface IUser {
   id: string;
-  name: string;
-  email: string;
+  username: string;
   avatar?: string;
   setting?: ISetting;
   is_admin: boolean;

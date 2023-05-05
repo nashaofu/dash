@@ -40,13 +40,7 @@ export default function MyProfile({
         title: '用户名',
         dataIndex: 'name',
         key: 'name',
-        width: 200,
-        render: (_, record) => <div className={styles.name}>{record.name}</div>,
-      },
-      {
-        title: '邮箱',
-        dataIndex: 'email',
-        key: 'email',
+        render: (_, record) => <div className={styles.name}>{record.username}</div>,
       },
       {
         title: '用户头像',
@@ -55,10 +49,10 @@ export default function MyProfile({
         width: 100,
         render: (_, record) => {
           const avatar = record?.avatar ? uriToUrl(record.avatar) : undefined;
-          const name = record?.name?.slice(0, 1).toUpperCase();
+          const username = record?.username?.slice(0, 1).toUpperCase();
           return (
             <Avatar size={64} src={avatar} alt="用户头像" draggable={false}>
-              {name}
+              {username}
             </Avatar>
           );
         },

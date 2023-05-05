@@ -13,7 +13,7 @@ use utils::crypto;
 use validator::Validate;
 
 lazy_static! {
-  static ref NAME_REGEX: Regex = Regex::new(r"^[a-zA-Z0-9]\w{4,29}$").unwrap();
+  static ref USERNAME_REGEX: Regex = Regex::new(r"^[a-zA-Z0-9][\x21-\x7e]{4,29}$").unwrap();
   pub static ref PASSWORD_REGEX: Regex = Regex::new(r"^[\x21-\x7e]{8,30}$").unwrap();
 }
 
@@ -60,15 +60,10 @@ pub async fn get_user_list(
 #[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct CreateUserData {
   #[validate(regex(
-    path = "NAME_REGEX",
-    message = "用户名必须为字母、数字与下划线组成的 5-30 个字符，且只能由字母或数字开头"
+    path = "USERNAME_REGEX",
+    message = "用户名必须为 ASCII 码中的可见字符组成的 5-30 个字符，且只能由字母或数字开头"
   ))]
-  name: String,
-  #[validate(
-    length(min = 5, max = 30, message = "邮箱长度必须为 5 - 30 个字符"),
-    email(message = "邮箱格式不合法")
-  )]
-  email: String,
+  username: String,
   #[validate(regex(
     path = "PASSWORD_REGEX",
     message = "密码必须为 ASCII 码中的可见字符组成的 8 - 30 个字符"
@@ -100,8 +95,7 @@ pub async fn create_user(
   let password = crypto::hash(&data.password).map_err(AppError::from_err)?;
 
   users::ActiveModel {
-    name: Set(data.name.clone()),
-    email: Set(data.email.clone()),
+    username: Set(data.username.clone()),
     password: Set(password),
     avatar: Set(data.avatar.clone()),
     is_admin: Set(false),
@@ -111,9 +105,9 @@ pub async fn create_user(
   .await
   .map_err(|err| match err {
     DbErr::Query(SqlxError(_)) => {
-      AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册")
+      AppError::new(StatusCode::CONFLICT, 409, "用户名已经被注册")
     }
-    DbErr::Exec(SqlxError(_)) => AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册"),
+    DbErr::Exec(SqlxError(_)) => AppError::new(StatusCode::CONFLICT, 409, "用户名已经被注册"),
     e => e.into(),
   })
 }
@@ -121,15 +115,10 @@ pub async fn create_user(
 #[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct UpdateUserData {
   #[validate(regex(
-    path = "NAME_REGEX",
-    message = "用户名必须为字母、数字与下划线组成的 5-30 个字符，且只能由字母或数字开头"
+    path = "USERNAME_REGEX",
+    message = "用户名必须为 ASCII 码中的可见字符组成的 5-30 个字符，且只能由字母或数字开头"
   ))]
-  name: String,
-  #[validate(
-    length(min = 5, max = 30, message = "邮箱长度必须为 5 - 30 个字符"),
-    email(message = "邮箱格式不合法")
-  )]
-  email: String,
+  username: String,
   #[validate(length(min = 1, max = 255, message = "用户头像长度不得超过 255 个字符"))]
   avatar: Option<String>,
 }
@@ -145,15 +134,14 @@ pub async fn update_user(
     .ok_or(AppError::new(StatusCode::NOT_FOUND, 404, "用户不存在"))?
     .into_active_model();
 
-  user.name = Set(data.name.clone());
-  user.email = Set(data.email.clone());
+  user.username = Set(data.username.clone());
   user.avatar = Set(data.avatar.clone());
 
   user.update(db).await.map_err(|err| match err {
     DbErr::Query(SqlxError(_)) => {
-      AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册")
+      AppError::new(StatusCode::CONFLICT, 409, "用户名已经被注册")
     }
-    DbErr::Exec(SqlxError(_)) => AppError::new(StatusCode::CONFLICT, 409, "用户名或邮箱已经被注册"),
+    DbErr::Exec(SqlxError(_)) => AppError::new(StatusCode::CONFLICT, 409, "用户名已经被注册"),
     e => e.into(),
   })
 }
