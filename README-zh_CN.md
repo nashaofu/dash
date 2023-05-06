@@ -30,7 +30,7 @@ docker run -d \
   ghcr.io/nashaofu/dash:latest
 ```
 
-然后在浏览器中访问 `http://127.0.0.1:3000` 即可使用。默认账号密码为 `admin/password`。
+然后在浏览器中访问 `http://127.0.0.1:3000` 即可使用。默认账号密码为 `username/password`。
 
 如果需要自定义配置，可将项目根目录下的 `settings.example.toml` 文件拷贝到 `/opt/dash/data` 目录下并重命名为 `settings.toml`，具体配置参考配置章节。
 
