@@ -10,9 +10,7 @@ pub struct Model {
   #[serde(serialize_with = "i64_to_str")]
   pub id: i64,
   #[sea_orm(unique, indexed)]
-  pub name: String,
-  #[sea_orm(unique, indexed)]
-  pub email: String,
+  pub username: String,
   // JSON 序列化时不会传到前端
   #[serde(skip_serializing)]
   pub password: String,

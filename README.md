@@ -30,7 +30,7 @@ docker run -d \
   ghcr.io/nashaofu/dash:latest
 ```
 
-Then, you can use it by accessing `http://127.0.0.1:3000` in your browser. The default username and password are `admin/password`.
+Then, you can use it by accessing `http://127.0.0.1:3000` in your browser. The default username and password are `username/password`.
 
 If you need to customize the configuration, you can copy the `settings.example.toml` file in the project root directory to the `/opt/dash/data` directory and rename it to `settings.toml`. For specific configurations, refer to the Configuration section.
 

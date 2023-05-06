@@ -8,7 +8,7 @@ import ImageUploader from '../ImageUploader';
 import { IUploadFile, uploadFileToUri, uriToUploadFile } from '@/utils/file';
 import useMessage from '@/hooks/useMessage';
 
-interface IUserModel extends Pick<IUser, 'name' | 'email'> {
+interface IUserModel extends Pick<IUser, 'username'> {
   avatar?: IUploadFile[];
 }
 
@@ -49,8 +49,7 @@ export default function UserUpdate({
   const onFinish = useCallback(() => {
     const userModel = form.getFieldsValue();
     updateUser({
-      name: userModel.name,
-      email: userModel.email,
+      username: userModel.username,
       avatar: uploadFileToUri(userModel.avatar?.[0]),
     });
   }, [form, updateUser]);
@@ -62,8 +61,7 @@ export default function UserUpdate({
 
     if (user) {
       form.setFieldsValue({
-        name: user.name,
-        email: user.email,
+        username: user.username,
         avatar: user.avatar ? [uriToUploadFile(user.avatar)] : [],
       });
     } else {
@@ -97,7 +95,7 @@ export default function UserUpdate({
       >
         <Form.Item
           label="用户名"
-          name="name"
+          name="username"
           required
           validateFirst
           rules={[
@@ -108,34 +106,9 @@ export default function UserUpdate({
             },
             {
               type: 'string',
-              pattern: /^[a-zA-Z0-9]\w{4,29}$/,
+              pattern: /^[a-zA-Z0-9][\x21-\x7e]{4,29}$/,
               message:
-                '用户名必须为字母、数字与下划线组成的 5-30 个字符，且只能由字母或数字开头',
-            },
-          ]}
-        >
-          <Input showCount maxLength={30} />
-        </Form.Item>
-        <Form.Item
-          label="邮箱"
-          name="email"
-          required
-          validateFirst
-          rules={[
-            {
-              type: 'string',
-              required: true,
-              message: '请输入邮箱',
-            },
-            {
-              type: 'email',
-              message: '请输入合法的邮箱',
-            },
-            {
-              type: 'string',
-              min: 5,
-              max: 30,
-              message: '邮箱长度必须为 5-30 个字符',
+                '用户名必须为 ASCII 码中的可见字符组成的 5-30 个字符，且只能由字母或数字开头',
             },
           ]}
         >

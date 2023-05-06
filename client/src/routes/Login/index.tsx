@@ -13,7 +13,7 @@ import { IUser } from '@/types/user';
 import useLocalStorage from '@/hooks/useLocalStorage';
 
 interface ILoginData {
-  login: string;
+  username: string;
   password: string;
 }
 
@@ -39,7 +39,7 @@ export default function Login() {
     },
   );
 
-  const [loginStorage, setLoginStorage] = useLocalStorage<string>('login');
+  const [usernameStorage, setUsernameStorage] = useLocalStorage<string>('username');
 
   const { token } = theme.useToken();
 
@@ -48,12 +48,12 @@ export default function Login() {
   const onFinish = useCallback(async () => {
     const { remember, ...model } = form.getFieldsValue();
     if (remember) {
-      setLoginStorage(model.login);
+      setUsernameStorage(model.username);
     } else {
-      setLoginStorage(undefined);
+      setUsernameStorage(undefined);
     }
     login(model);
-  }, [form, login, setLoginStorage]);
+  }, [form, login, setUsernameStorage]);
 
   return (
     <div
@@ -75,24 +75,24 @@ export default function Login() {
           scrollToFirstError
         >
           <Form.Item
-            name="login"
+            name="username"
             required
             validateFirst
-            initialValue={loginStorage}
+            initialValue={usernameStorage}
             rules={[
               {
                 required: true,
-                message: '请输入用户名或邮箱',
+                message: '请输入用户名',
               },
               {
                 type: 'string',
                 min: 5,
                 max: 40,
-                message: '用户名或邮箱长度必须为 5 - 30 个字符',
+                message: '用户名长度必须为 5 - 30 个字符',
               },
             ]}
           >
-            <Input placeholder="请输入用户名或邮箱" maxLength={30} />
+            <Input placeholder="请输入用户名" maxLength={30} />
           </Form.Item>
 
           <Form.Item
@@ -115,7 +115,7 @@ export default function Login() {
           </Form.Item>
 
           <Form.Item name="remember" valuePropName="checked" initialValue>
-            <Checkbox>记住用户名或邮箱</Checkbox>
+            <Checkbox>记住用户名</Checkbox>
           </Form.Item>
 
           <Form.Item>
@@ -132,7 +132,7 @@ export default function Login() {
             }}
           >
             登录失败：
-            {get(error, 'response.data.message', '用户名、邮箱或密码错误')}
+            {get(error, 'response.data.message', '用户名或密码错误')}
           </div>
         )}
       </Spin>

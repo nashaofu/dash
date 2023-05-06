@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import './styles/index.less';
 
+import ErrorBoundary from './components/ErrorBoundary';
 import Dash from './Dash';
 
 dayjs.locale('zh-cn');
@@ -26,8 +27,10 @@ function localStorageProvider() {
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
-    <SWRConfig value={{ provider: localStorageProvider }}>
-      <Dash />
-    </SWRConfig>
+    <ErrorBoundary>
+      <SWRConfig value={{ provider: localStorageProvider }}>
+        <Dash />
+      </SWRConfig>
+    </ErrorBoundary>
   </StrictMode>,
 );
