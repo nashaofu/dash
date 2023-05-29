@@ -1,6 +1,6 @@
-# dash-client
+# dash-web
 
-dash-client 是 Dash 的前端项目，基于 React、Antd、Rspack 开发。
+dash-web 是 Dash 的前端项目，基于 React、Antd、Rspack 开发。
 
 ## 开发
 

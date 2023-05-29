@@ -23,6 +23,6 @@ unzip dash-${target}.zip
 mv dash-${target}/dash dash/dash
 chmod +x dash/dash
 
-wget https://github.com/nashaofu/dash/releases/latest/download/dash-client.zip
-unzip dash-client.zip
-mv dash-client dash/www
+wget https://github.com/nashaofu/dash/releases/latest/download/dash-web.zip
+unzip dash-web.zip
+mv dash-web dash/www

@@ -10,4 +10,4 @@ publish = false
 rust-argon2 = "1.0.0"
 rand = "0.8.5"
 lazy_static = "1.4.0"
-serde = "1.0.159"
+serde = "1.0.163"

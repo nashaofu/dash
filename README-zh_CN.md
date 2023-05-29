@@ -36,13 +36,13 @@ docker run -d \
 
 ### 系统中使用
 
-1. 前往[release](https://github.com/nashaofu/dash/releases)页面下载`dash-client.zip`与`dash-xxxx.zip`，`xxxx`表示系统架构，请根据自己的情况选择
-2. 新建一个目录`dash`,解压`dash-client.zip`到`dash/www`,解压`dash-xxxx.zip`到`dash`目录下，最终目录结构如下
+1. 前往[release](https://github.com/nashaofu/dash/releases)页面下载`dash-web.zip`与`dash-xxxx.zip`，`xxxx`表示系统架构，请根据自己的情况选择
+2. 新建一个目录`dash`,解压`dash-web.zip`到`dash/www`,解压`dash-xxxx.zip`到`dash`目录下，最终目录结构如下
 
    ```bash
    .
    ├── dash # dash-xxxx.zip
-   └── www # dash-client.zip
+   └── www # dash-web.zip
        ├── ... # other files
        └── index.html
    ```
@@ -83,7 +83,7 @@ database:
    # 启动服务端项目
    cargo run
    # 启动前端项目
-   cd client && yarn && yarn dev
+   cd web && yarn && yarn dev
    ```
 
 4. 修改并提交代码：

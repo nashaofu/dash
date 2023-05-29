@@ -36,13 +36,13 @@ If you need to customize the configuration, you can copy the `settings.example.y
 
 ### Using system
 
-1. Go to the [release](https://github.com/nashaofu/dash/releases) page to download `dash-client.zip` and `dash-xxxx.zip`, where `xxxx` represents the system architecture. Choose according to your own situation.
-2. Create a new directory `dash`, unzip `dash-client.zip` to `dash/www`, unzip `dash-xxxx.zip` to `dash` directory. Finally, the directory structure is as follows:
+1. Go to the [release](https://github.com/nashaofu/dash/releases) page to download `dash-web.zip` and `dash-xxxx.zip`, where `xxxx` represents the system architecture. Choose according to your own situation.
+2. Create a new directory `dash`, unzip `dash-web.zip` to `dash/www`, unzip `dash-xxxx.zip` to `dash` directory. Finally, the directory structure is as follows:
 
    ```bash
    .
    ├── dash # dash-xxxx.zip
-   └── www # dash-client.zip
+   └── www # dash-web.zip
        ├── ... # other files
        └── index.html
    ```
@@ -83,7 +83,7 @@ If you would like to contribute to Dash, please follow these steps:
    # Start the server project
    cargo run
    # Start the front-end project
-   cd client && yarn && yarn dev
+   cd web && yarn && yarn dev
    ```
 
 4. Modify and commit the code:
