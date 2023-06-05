@@ -46,7 +46,7 @@ pub struct Settings {
 
 impl Settings {
   pub fn init() -> Result<Self> {
-    let config_file = DATA_DIR.join("settings.toml").display().to_string();
+    let config_file = DATA_DIR.join("settings.yaml").display().to_string();
     let config = Config::builder()
       .add_source(config::File::with_name(&config_file).required(false))
       .build()?;

@@ -32,7 +32,7 @@ docker run -d \
 
 然后在浏览器中访问 `http://127.0.0.1:3000` 即可使用。默认账号密码为 `username/password`。
 
-如果需要自定义配置，可将项目根目录下的 `settings.example.toml` 文件拷贝到 `/opt/dash/data` 目录下并重命名为 `settings.toml`，具体配置参考配置章节。
+如果需要自定义配置，可将项目根目录下的 `settings.example.yaml` 文件拷贝到 `/opt/dash/data` 目录下并重命名为 `settings.yaml`，具体配置参考配置章节。
 
 ### 系统中使用
 
@@ -51,14 +51,14 @@ docker run -d \
 
 ## 配置
 
-项目配置文件为`settings.toml`，配置内容如下：
+项目配置文件为`settings.yaml`，配置内容如下：
 
-```toml
+```yaml
 # 服务端口号
-port = 3000
+port: 3000
 # 数据库配置
-[database]
-url = "postgres://postgres:password@db:5432/dash"
+database:
+  url: postgres://postgres:password@db:5432/dash
 ```
 
 ## 贡献指南

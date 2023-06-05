@@ -1,0 +1,5 @@
+# 服务端口号
+port: 3000
+# 数据库配置
+database:
+  url: postgres://postgres:password@db:5432/dash
