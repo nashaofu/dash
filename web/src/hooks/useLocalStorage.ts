@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useSyncExternalStore } from "react";
 
 function getLocalStorage<T>(key: string): T | undefined {
   try {
@@ -14,17 +14,31 @@ function getLocalStorage<T>(key: string): T | undefined {
   return undefined;
 }
 
-export default function useLocalStorage<T>(
-  key: string,
-): [T | undefined, (val: T | undefined) => void] {
-  const localStorageKey = `Dash.${key}`;
+const listeners = new Map<string, Array<() => void>>();
 
-  const [state, setState] = useState(() => getLocalStorage<T>(localStorageKey));
+export default function useLocalStorage<T>(
+  key: string
+): [T | undefined, (val: T | undefined) => void] {
+  const localStorageKey = `Wol.${key}`;
+
+  const state = useSyncExternalStore(
+    (onStoreChange) => {
+      const keyListeners = listeners.get(key) ?? [];
+      keyListeners.push(onStoreChange);
+      listeners.set(key, keyListeners);
+      return () => {
+        const newKeyListeners = listeners.get(key) ?? [];
+        listeners.set(
+          key,
+          newKeyListeners.filter((item) => item !== onStoreChange)
+        );
+      };
+    },
+    () => getLocalStorage<T>(localStorageKey)
+  );
 
   const setLocalStorage = useCallback(
     (value: T | undefined) => {
-      setState(value);
-
       if (value === undefined) {
         localStorage.removeItem(localStorageKey);
       } else {
@@ -35,8 +49,9 @@ export default function useLocalStorage<T>(
           console.error(err);
         }
       }
+      listeners.get(key)?.forEach((item) => item());
     },
-    [localStorageKey],
+    [localStorageKey, key]
   );
 
   return [state, setLocalStorage];
