@@ -22,7 +22,3 @@ wget https://github.com/nashaofu/dash/releases/latest/download/dash-${target}.zi
 unzip dash-${target}.zip
 mv dash-${target}/dash dash/dash
 chmod +x dash/dash
-
-wget https://github.com/nashaofu/dash/releases/latest/download/dash-web.zip
-unzip dash-web.zip
-mv dash-web dash/www
