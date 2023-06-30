@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { SWRConfig, Cache } from 'swr';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
+import './sw';
 import './styles/index.less';
 
 import ErrorBoundary from './components/ErrorBoundary';

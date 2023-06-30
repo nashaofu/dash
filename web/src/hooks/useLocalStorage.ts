@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from 'react';
 
 function getLocalStorage<T>(key: string): T | undefined {
   try {
@@ -17,7 +17,7 @@ function getLocalStorage<T>(key: string): T | undefined {
 const listeners = new Map<string, Array<() => void>>();
 
 export default function useLocalStorage<T>(
-  key: string
+  key: string,
 ): [T | undefined, (val: T | undefined) => void] {
   const localStorageKey = `Wol.${key}`;
 
@@ -30,11 +30,11 @@ export default function useLocalStorage<T>(
         const newKeyListeners = listeners.get(key) ?? [];
         listeners.set(
           key,
-          newKeyListeners.filter((item) => item !== onStoreChange)
+          newKeyListeners.filter((item) => item !== onStoreChange),
         );
       };
     },
-    () => getLocalStorage<T>(localStorageKey)
+    () => getLocalStorage<T>(localStorageKey),
   );
 
   const setLocalStorage = useCallback(
@@ -51,7 +51,7 @@ export default function useLocalStorage<T>(
       }
       listeners.get(key)?.forEach((item) => item());
     },
-    [localStorageKey, key]
+    [localStorageKey, key],
   );
 
   return [state, setLocalStorage];

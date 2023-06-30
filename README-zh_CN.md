@@ -14,12 +14,13 @@ Dash 是一个快速、轻量的私有网页应用导航面板。它的灵感来
 - 主题切换：支持浅色主题与暗黑主题。
 - 占用资源少，运行速度快。
 - 跨平台：可以在 Linux、macOS 和 Windows 操作系统上运行。
+- 支持 PWA，实现原生应用一样的体验
 
 ## 安装和使用
 
 ### Docker 中使用（推荐）
 
-推荐使用 Docker 安装方式，使用简单方便，只需运行如下命令：
+推荐使用 Docker 安装方式，只需运行如下命令即可启动：
 
 ```sh
 docker pull ghcr.io/nashaofu/dash:latest
@@ -36,18 +37,8 @@ docker run -d \
 
 ### 系统中使用
 
-1. 前往[release](https://github.com/nashaofu/dash/releases)页面下载`dash-web.zip`与`dash-xxxx.zip`，`xxxx`表示系统架构，请根据自己的情况选择
-2. 新建一个目录`dash`,解压`dash-web.zip`到`dash/www`,解压`dash-xxxx.zip`到`dash`目录下，最终目录结构如下
-
-   ```bash
-   .
-   ├── dash # dash-xxxx.zip
-   └── www # dash-web.zip
-       ├── ... # other files
-       └── index.html
-   ```
-
-3. 在终端中运行`./dash`即可启动服务
+1. 前往[release](https://github.com/nashaofu/dash/releases)页面下载`dash-xxxx.zip`，`xxxx`表示系统架构，请根据自己的情况选择
+2. 解压出`dash-xxxx.zip`中的可执行文件，然后在终端中运行即可启动服务
 
 ## 配置
 
