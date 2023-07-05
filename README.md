@@ -4,7 +4,7 @@ Dash is a fast and lightweight private web application navigation panel. It is i
 
 English | [简体中文](README-zh_CN.md)
 
-![logo](./logo.png)
+![logo](./logo.svg)
 
 ## Features
 
