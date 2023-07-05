@@ -4,7 +4,7 @@ Dash 是一个快速、轻量的私有网页应用导航面板。它的灵感来
 
 [English](README.md) | 简体中文
 
-![logo](./logo.svg)
+![logo](./resources/logo.png)
 
 ## 功能特性
 

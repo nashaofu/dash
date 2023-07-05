@@ -7,7 +7,7 @@
   "description": "快速轻量的私有网页应用导航面板",
   "icons": [
     {
-      "src": "favicon.svg",
+      "src": "./logo.png",
       "sizes": "any"
     }
   ]

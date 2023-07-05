@@ -4,7 +4,7 @@ import {
   ConfigProvider, theme, App, Spin,
 } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import wallpaper from '@/assets/wallpaper.jpeg';
+import wallpaper from '@/assets/wallpaper.png';
 import router from './router';
 import { uriToUrl } from './utils/file';
 import useUser from './store/user';
