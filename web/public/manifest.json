@@ -1,0 +1,14 @@
+{
+  "name": "Dash",
+  "short_name": "Dash",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fff",
+  "description": "快速轻量的私有网页应用导航面板",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "any"
+    }
+  ]
+}

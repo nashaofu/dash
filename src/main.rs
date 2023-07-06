@@ -1,17 +1,18 @@
 pub mod api;
+pub mod asset;
 pub mod core;
 pub mod errors;
 pub mod settings;
 
-use actix_files::{Files, NamedFile};
+use actix_files::Files;
 use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{
   cookie::{time, Key},
-  dev::{fn_service, ServiceRequest, ServiceResponse},
   middleware::{Logger, NormalizePath},
   web, App, HttpServer, ResponseError,
 };
+use asset::serve;
 use dotenv::dotenv;
 use errors::AppError;
 use migration::{Migrator, MigratorTrait};
@@ -64,17 +65,7 @@ async fn main() -> Result<(), io::Error> {
           .configure(api::init),
       )
       .service(Files::new("/files", SETTINGS.files_dir.clone()))
-      .service(
-        Files::new("/", "./www")
-          .index_file("index.html")
-          .use_etag(true)
-          .default_handler(fn_service(|req: ServiceRequest| async {
-            let (req, _) = req.into_parts();
-            let file = NamedFile::open_async("./www/index.html").await?;
-            let res = file.into_response(&req);
-            Ok(ServiceResponse::new(req, res))
-          })),
-      )
+      .default_service(web::to(serve))
   })
   .bind(("0.0.0.0", SETTINGS.port))?
   .run()

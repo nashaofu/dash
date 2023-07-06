@@ -9,32 +9,37 @@ publish = false
 members = [".", "entity", "migration", "utils"]
 
 [dependencies]
-actix-web = "4"
+actix-web = { version = "4.3", default-features = false, features = ["macros"] }
 actix-files = "0.6"
 actix-identity = "0.5"
 actix-session = { version = "0.7", features = ["cookie-session"] }
-serde = { version = "1", features = ["derive"] }
-validator = { version = "0.16.0", features = ["derive"] }
-log = "0.4.17"
-env_logger = "0.10.0"
-dotenv = "0.15.0"
-config = "0.13.3"
-anyhow = "1.0.69"
-regex = "1.7.1"
-lazy_static = "1.4.0"
-actix-multipart-extract = "0.1.5"
-chrono = "0.4.23"
-urlencoding = "2.1.2"
-futures-core = "0.3.28"
+serde = { version = "1.0", features = ["derive"] }
+validator = { version = "0.16", features = ["derive"] }
+log = "0.4"
+env_logger = "0.10"
+dotenv = "0.15"
+config = { version = "0.13", default-features = false, features = [
+  "ron",
+  "yaml",
+  "yaml-rust",
+] }
+anyhow = "1.0"
+regex = "1.8"
+lazy_static = "1.4"
+actix-multipart-extract = "0.1"
+chrono = "0.4"
+urlencoding = "2.1"
+futures-core = "0.3"
+rust-embed = { version = "6.7", features = ["mime-guess"] }
 entity = { path = "./entity" }
 migration = { path = "./migration" }
 utils = { path = "./utils" }
 
 [dependencies.sea-orm]
-version = "0.11.0"
+version = "0.11"
 features = ["debug-print", "sqlx-all", "runtime-async-std-rustls"]
 
 [dependencies.reqwest]
-version = "0.11.16"
+version = "0.11"
 default-features = false
 features = ["stream", "rustls-tls-native-roots"]
