@@ -1,4 +1,4 @@
-use argon2::{hash_encoded, verify_encoded, Config, Result, ThreadMode, Variant, Version};
+use argon2::{hash_encoded, verify_encoded, Config, Result, Variant, Version};
 use lazy_static::lazy_static;
 use rand::{rngs::OsRng, RngCore};
 
@@ -9,7 +9,6 @@ lazy_static! {
     lanes: 1,
     mem_cost: 4096,
     secret: &[],
-    thread_mode: ThreadMode::Parallel,
     time_cost: 4,
     variant: Variant::Argon2id,
     version: Version::Version13,

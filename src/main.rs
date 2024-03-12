@@ -16,7 +16,7 @@ use asset::serve;
 use dotenv::dotenv;
 use errors::AppError;
 use migration::{Migrator, MigratorTrait};
-use sea_orm::Database;
+use sea_orm::{ConnectOptions, Database};
 use settings::SETTINGS;
 use std::{io, time::Duration};
 
@@ -28,7 +28,17 @@ async fn main() -> Result<(), io::Error> {
 
   log::info!("Connecting database...");
 
-  let db = Database::connect(SETTINGS.database.url.clone())
+  let mut connect_options = ConnectOptions::new(SETTINGS.database.url.clone());
+  connect_options
+    .max_connections(6)
+    .min_connections(3)
+    .connect_timeout(Duration::from_secs(10))
+    .idle_timeout(Duration::from_secs(10))
+    .acquire_timeout(Duration::from_secs(10))
+    // 连接池保持一小时时间
+    .max_lifetime(Duration::from_secs(60 * 60));
+
+  let db = Database::connect(connect_options)
     .await
     .expect("Database connect failed");
   Migrator::up(&db, None)

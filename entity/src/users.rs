@@ -1,6 +1,6 @@
 use utils::serialize::i64_to_str;
 
-use sea_orm::entity::prelude::*;
+use sea_orm::{entity::prelude::*, FromJsonQueryResult};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
