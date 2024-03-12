@@ -1,3 +1,4 @@
+use actix_identity::error::{GetIdentityError, LoginError};
 use actix_web::{body::BoxBody, http::StatusCode, HttpResponse, ResponseError};
 use reqwest;
 use sea_orm::DbErr;
@@ -78,6 +79,20 @@ impl From<anyhow::Error> for AppError {
 impl From<ParseIntError> for AppError {
   fn from(err: ParseIntError) -> Self {
     log::error!("ParseIntError {}", err);
+    AppError::from_err(err)
+  }
+}
+
+impl From<GetIdentityError> for AppError {
+  fn from(err: GetIdentityError) -> Self {
+    log::error!("GetIdentityError {}", err);
+    AppError::from_err(err)
+  }
+}
+
+impl From<LoginError> for AppError {
+  fn from(err: LoginError) -> Self {
+    log::error!("LoginError {}", err);
     AppError::from_err(err)
   }
 }

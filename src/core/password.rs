@@ -14,13 +14,13 @@ pub struct UpdatePasswordData {
   #[validate(length(min = 8, max = 30, message = "密码长度必须为 8 - 30 个字符"))]
   old_password: String,
   #[validate(regex(
-    path = "PASSWORD_REGEX",
+    path = "*PASSWORD_REGEX",
     message = "密码必须为 ASCII 码中的可见字符组成的 8 - 30 个字符"
   ))]
   password: String,
   #[validate(
     regex(
-      path = "PASSWORD_REGEX",
+      path = "*PASSWORD_REGEX",
       message = "重复密码必须为 ASCII 码中的可见字符组成的 8 - 30 个字符"
     ),
     must_match(other = "password", message = "重复密码与密码不一致")

@@ -60,18 +60,18 @@ pub async fn get_user_list(
 #[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct CreateUserData {
   #[validate(regex(
-    path = "USERNAME_REGEX",
+    path = "*USERNAME_REGEX",
     message = "用户名必须为 ASCII 码中的可见字符组成的 5-30 个字符，且只能由字母或数字开头"
   ))]
   username: String,
   #[validate(regex(
-    path = "PASSWORD_REGEX",
+    path = "*PASSWORD_REGEX",
     message = "密码必须为 ASCII 码中的可见字符组成的 8 - 30 个字符"
   ))]
   password: String,
   #[validate(
     regex(
-      path = "PASSWORD_REGEX",
+      path = "*PASSWORD_REGEX",
       message = "重复密码必须为 ASCII 码中的可见字符组成的 8 - 30 个字符"
     ),
     must_match(other = "password", message = "重复密码与密码不一致")
@@ -115,7 +115,7 @@ pub async fn create_user(
 #[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct UpdateUserData {
   #[validate(regex(
-    path = "USERNAME_REGEX",
+    path = "*USERNAME_REGEX",
     message = "用户名必须为 ASCII 码中的可见字符组成的 5-30 个字符，且只能由字母或数字开头"
   ))]
   username: String,
