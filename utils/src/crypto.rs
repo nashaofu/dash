@@ -1,6 +1,6 @@
-use argon2::{hash_encoded, verify_encoded, Config, Result, Variant, Version};
+use argon2::{Config, Result, Variant, Version, hash_encoded, verify_encoded};
 use lazy_static::lazy_static;
-use rand::{rngs::OsRng, RngCore};
+use rand::{TryRngCore, rngs::OsRng};
 
 lazy_static! {
   static ref ARGON2_HASH_CONFIG: Config<'static> = Config {
@@ -17,7 +17,9 @@ lazy_static! {
 
 pub fn hash(password: &String) -> Result<String> {
   let mut bytes = [0u8; 32];
-  OsRng.fill_bytes(&mut bytes);
+  OsRng
+    .try_fill_bytes(&mut bytes)
+    .map_err(|_| argon2::Error::SaltTooShort)?;
 
   hash_encoded(password.as_bytes(), &bytes, &ARGON2_HASH_CONFIG)
 }
