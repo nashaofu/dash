@@ -19,7 +19,7 @@ pub struct ProxyData {
 
 pub async fn get(
   data: &ProxyData,
-) -> Result<impl Stream<Item = reqwest::Result<web::Bytes>>, AppError> {
+) -> Result<impl Stream<Item = reqwest::Result<web::Bytes>> + 'static, AppError> {
   let client = Client::builder()
     .connect_timeout(Duration::from_secs(120))
     .build()?;
